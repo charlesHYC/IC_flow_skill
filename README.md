@@ -251,6 +251,14 @@ bash scripts/run_all.sh
 
 ### 共用：設定與執行入口
 
+> **為什麼要用腳本，不直接在工具裡打指令？**
+> EDA 工具（DC、PT、ICC2…）都能用 Tcl 控制。把指令寫成 `.tcl`，同一個流程就可以重跑、改一個參數再跑、交給別人跑，結果都一樣；手打指令很難重現，也很難知道上次到底做了什麼。
+>
+> **為什麼要有總設定檔 `flow_config.tcl`？**
+> 設計名稱、時脈、製程路徑在每個階段都會用到。集中在一個檔，換設計只要改一處，不會出現「合成用 30 ns、STA 卻用 20 ns」這種錯。
+>
+> **業界會這樣做嗎？** 會，而且規模大很多。公司通常有 CAD 團隊維護整套 flow：Synopsys 提供的 Reference Methodology（RM）腳本、內部的 Makefile 或 flow 管理工具，配上機房的工作排程系統（例如 LSF）。核心觀念相同：**設定集中、每步可重跑、讀報告自動判定**。
+
 | 檔案 | 做什麼 |
 |---|---|
 | `flow_config.tcl` | **總設定**。設計名稱、RTL、時脈、週期、要不要上 PAD、製程與 library 路徑、三個 corner 的對照表。所有 `.tcl` 第一行都會讀它，換設計主要改這一個檔 |
@@ -263,6 +271,14 @@ bash scripts/run_all.sh
 ### 0. PAD 規劃（只有 `USE_PAD 1`）— Python
 
 決定晶片外圍要放哪些 PAD，並算出 PAD 的延遲，讓之後每一步都把 PAD 算進去。
+
+> **為什麼要做？** 晶片要靠 PAD 才能和外界相連：PAD 負責打線、防靜電，還要推得動電路板上的負載（約 1 pF，比晶片內部大幾十倍）。所以 PAD 有明顯的延遲，會吃掉你的時序預算。這裡在設計一開始就把它加進來，從 RTL 模擬就看得到影響。
+>
+> **省略會怎樣？** 只做核心的話，時序看起來很寬鬆，但真正接上 PAD 後可能就不夠了。
+>
+> **業界會用嗎？** PAD 一定有，但做法不同：
+> - PAD library 由晶圓廠或 IP 廠提供，IO ring 通常由負責整顆晶片的 top-level 團隊和封裝團隊一起規劃，不會用腳本自動排。
+> - 業界的 RTL 模擬一般是零延遲，不會把 PAD 延遲放進去；IO 時序靠 STA 的 IO 約束和電路板時序分析來保證。這裡把 PAD 延遲放進 RTL 模擬是**教學設計**，讓你提早看到 PAD 的影響。
 
 | 檔案 | 做什麼 |
 |---|---|
@@ -281,6 +297,15 @@ bash scripts/run_stage.sh pad
 
 確認你寫的 RTL 功能正確，之後每一步都要和這個結果一致。
 
+> **為什麼要做？** 這是唯一確認「設計本身對不對」的步驟。後面的合成、APR 都只負責「照你寫的做出來」，如果 RTL 本來就錯，後面做得再完美也是錯的晶片。
+>
+> **省略會怎樣？** 等到閘級模擬或晶片做回來才發現功能錯，要從頭改、重跑整個流程。
+>
+> **業界會用嗎？** 會，而且是整個專案花最多人力的地方。差別是業界不會只用一個固定測資的 testbench：
+> - 用 SystemVerilog／UVM 寫隨機測試，搭配**覆蓋率（coverage）**確認每個功能、每種狀況都測過。
+> - 模擬前先做 **lint**（檢查寫法問題）和 **CDC**（跨時脈域檢查），本流程沒有包含。
+> - 工具除了 VCS，也常見 Cadence Xcelium、Siemens Questa。
+
 | 檔案 | 做什麼 |
 |---|---|
 | `run_rtl_sim.sh` | 用 VCS 編譯 tb＋RTL 並執行，檢查 tb 印出成功字串。有 PAD 時改模擬晶片外殼＋帶延遲的 PAD model；可用 `SIM_CASES` 讓同一個 tb 用不同 define 跑多次 |
@@ -296,6 +321,15 @@ cd runs/rtl_sim && bash ../../scripts/run_rtl_sim.sh
 ### 2. 邏輯合成 — Design Compiler
 
 把 RTL 換成標準元件（AND、OR、正反器…）組成的 gate-level netlist。
+
+> **為什麼要做？** 晶片上沒有 `if`、`always` 這種東西，只有製程提供的標準元件。合成就是把 RTL「翻譯」成這些元件，並依照 SDC 的時脈要求挑大小、調結構，讓電路跑得夠快。
+>
+> **SDC 是什麼？** 告訴工具「時脈多快、輸入訊號幾點到、輸出要推多重的負載」。工具只會照 SDC 最佳化；SDC 寫錯，合成報告再漂亮也沒意義。這份約束從合成一路用到 STA、APR。
+>
+> **業界會用嗎？** 會。Design Compiler 是業界最常見的合成工具之一（另一大是 Cadence Genus；新一代 Synopsys 流程常改用 Fusion Compiler）。業界合成還會多做：
+> - **DFT**：插入 scan chain，讓晶片做回來可以測試（本流程沒做）。
+> - **低功耗**：clock gating、多種臨界電壓元件、UPF 電源規格。
+> - **拓樸模式（topographical）**：參考實際擺放來估線長。本流程用的 **wire-load model** 是用扇出數粗估線長的舊方法，先進製程已經不準，所以業界很少單獨依賴它。
 
 | 檔案 | 做什麼 |
 |---|---|
@@ -315,6 +349,12 @@ cd runs/synthesis && dc_shell -f ../../scripts/dc_syn.tcl
 
 不跑模擬，用數學方法證明合成出來的 netlist 和 RTL 功能完全相同。
 
+> **為什麼要做？** 合成工具會大幅改寫電路（合併、拆開、改名、重新排列），你沒辦法用肉眼確認它沒改壞。等價驗證用數學證明兩邊在所有輸入下的行為都一樣，比模擬可靠：模擬只能測你給的那些測資。
+>
+> **省略會怎樣？** 合成的邏輯錯誤（例如約束寫錯導致工具誤刪電路）可能一路被帶到晶片上。
+>
+> **業界會用嗎？** 會，而且是**必做**。每次 netlist 被改過（合成、插 DFT、APR、ECO）都要再做一次。常見工具是 Formality 和 Cadence Conformal。`.svf` 是 DC 記錄「我把哪個名字改成什麼」的檔案，讓 Formality 對得上兩邊，業界流程也是這樣用。
+
 | 檔案 | 做什麼 |
 |---|---|
 | `fm_rtl2gate.tcl` | 讀 RTL（reference）和合成 netlist（implementation），用 DC 留下的 `.svf` 對上兩邊的名字，逐一比對 |
@@ -330,6 +370,12 @@ cd runs/formality && fm_shell -f ../../scripts/fm_rtl2gate.tcl
 ### 4. 佈局前 STA — PrimeTime
 
 在 slow／typical／fast 三個 corner 計算每條路徑的時間餘裕（slack），確認時序來得及。
+
+> **為什麼要做？** 模擬只能驗證你給的測資，STA 則是把**每一條**訊號路徑都算一遍，確認在時脈週期內一定跑得完（setup）、也不會太快蓋掉前一筆資料（hold）。
+>
+> **為什麼要三個 corner？** 晶片的速度會隨製程偏差、電壓、溫度改變。slow corner 檢查最慢時來不來得及（setup），fast corner 檢查最快時會不會太快（hold）。
+>
+> **業界會用嗎？** 會。PrimeTime 是業界公認的 **signoff STA 標準**（另一個常見的是 Cadence Tempus）。業界會分析更多 corner 和工作模式（MCMM），加上晶片內部位置差異（OCV、POCV）和訊號互相干擾（crosstalk）。佈局前的 STA 只是早期檢查，真正算數的是第 9 步的繞線後 STA。
 
 | 檔案 | 做什麼 |
 |---|---|
@@ -348,6 +394,10 @@ for c in slow typical fast; do FLOW_CORNER=$c pt_shell -f ../../scripts/pt_prela
 
 用合成後的 netlist 加上每顆元件的真實延遲（SDF），再跑一次 testbench。比賽通常評到這一步。
 
+> **為什麼要做？** 用帶真實延遲的 netlist 再跑一次，可以抓到 RTL 模擬看不到的問題，例如 reset 沒有正確初始化、不定值（X）亂傳、testbench 取樣時間太貼近訊號變化。
+>
+> **業界會用嗎？** 會，但**只跑一部分測試**。帶 SDF 的閘級模擬非常慢，而時序正確性已由 STA 保證、功能等價已由 Formality 保證，所以業界通常只用它檢查 reset、開機流程、X 傳遞和 DFT 測試向量，不會把全部回歸測試都跑一遍。IC Contest 會把它列為評分項目，所以這裡完整跑。
+
 | 檔案 | 做什麼 |
 |---|---|
 | `run_gate_sim.sh` | 用 VCS 模擬 netlist＋SDF，檢查功能 PASS、SDF 全部註入成功、沒有時序違規。設 `POSTROUTE=1` 時改用繞線後的 netlist 和 SDF（第 9 步） |
@@ -363,6 +413,16 @@ cd runs/gate_sim && bash ../../scripts/run_gate_sim.sh
 ### 6. APR（擺放與繞線）— IC Compiler II
 
 把 netlist 裡的元件擺到晶片上、長時脈樹、用金屬線連起來，最後輸出版圖。分成五個腳本：
+
+> **為什麼要做？** netlist 只說明「哪些元件、怎麼連」，沒有說「放在哪裡、線怎麼走」。APR 決定每顆元件的位置、建電源網路、把時脈平均送到每個正反器（CTS），再用金屬線連起來。線越長延遲越大，所以 APR 也會一邊擺一邊顧時序。
+>
+> **為什麼分成好幾個腳本？** 每一段都很花時間，而且常要回頭調整。分開跑、每段存一個 block，出錯時可以從上一個存檔點重來，不用從頭跑。
+>
+> **業界會用嗎？** 會。IC Compiler II／Fusion Compiler 和 Cadence Innovus 是兩大主流。業界的差別：
+> - floorplan 通常要人工反覆調整（大晶片會切成很多區塊分開做）。
+> - 會做更多分析：電源壓降（IR drop）、電遷移（EM）、功耗。
+> - `apr_eco.tcl` 這種「讀報告、自動修違規」的做法業界很常見，只是工具和腳本更完整。
+> - `build_ndm.tcl` 是 library 準備工作，業界通常由 CAD／library 團隊統一建好，設計者直接拿來用。
 
 | 檔案 | 做什麼 | 在哪跑 | 成功標記 |
 |---|---|---|---|
@@ -386,6 +446,15 @@ cd runs/finish && icc2_shell -f ../../scripts/apr_finish.tcl && cd ../..
 ### 7. DRC／LVS — IC Validator
 
 檢查版圖能不能被工廠做出來（DRC），以及版圖接出來的電路和 netlist 是否一致（LVS）。
+
+> **為什麼要做？** 晶圓廠只收得下符合規則的版圖：線太細、太近，工廠就做不出來或良率很差，這是 **DRC**。版圖畫出來的電路要和 netlist 一模一樣，不然做回來的晶片功能就不對，這是 **LVS**。這兩項沒過，晶圓廠不會接單。
+>
+> **業界會用嗎？** 會，而且是**下線前一定要過**的 signoff。差別：
+> - 業界最常用 Siemens **Calibre**（多數晶圓廠以它的規則檔為準），IC Validator 也有人用。
+> - 還會跑天線效應（antenna）、金屬密度、ERC 等更多檢查。
+> - `apr_drc_patch.tcl` 這種「用腳本補金屬」是針對這套教學製程的特例。業界通常是讓 APR 工具重新繞線，或和晶圓廠確認後申請豁免（waiver），很少直接用腳本改版圖。
+> - 規則檔（runset）由晶圓廠提供，原則上不能改。`make_lvs_runset.sh` 只修正檔名、路徑和幾個新版 ICV 不相容的寫法，因為這套教學製程附的範例規則檔寫死了原作者機器上的設定；而且它改的是副本，原檔不動。
+> - `PAD_LIMITED` 在業界不會被接受：PAD library 有問題要請廠商修正，不能帶著錯誤下線。
 
 | 檔案 | 做什麼 |
 |---|---|
@@ -411,6 +480,12 @@ cd runs/apr && icc2_shell -f ../../scripts/apr_drc_patch.tcl && cd ../..   # 成
 
 從版圖算出每條金屬線真正的電阻和電容，給繞線後的時序分析用。
 
+> **為什麼要做？** APR 時工具只能用查表**估計**線的電阻電容。真正下線前，要從最終版圖精確算出每條線的寄生 RC，時序分析才準。
+>
+> **省略會怎樣？** 用估計值做的時序可能比實際樂觀，晶片做回來可能跑不到目標頻率。
+>
+> **業界會用嗎？** 會，是 signoff 必備。StarRC 是業界標準之一（另外常見 Cadence Quantus、Siemens Calibre xACT）。SPEF 是萃取結果的標準格式，交給 PrimeTime 使用。
+
 | 檔案 | 做什麼 |
 |---|---|
 | `run_starrc.sh` | 對三個 RC corner（Cmax／nominal／Cmin，對應 slow／typical／fast）各寫一份 SPEF |
@@ -426,6 +501,14 @@ cd runs/starrc && bash ../../scripts/run_starrc.sh
 ### 9. 繞線後驗證 — PrimeTime、Formality、VCS
 
 用真實的線延遲，把時序、等價、模擬再驗一次。
+
+> **為什麼要做？** 到這一步，電路才終於有了「真實的線延遲」和「真實的時脈樹」。前面所有的檢查（時序、等價、模擬）都要用最終版本再確認一次，這才是真正的 **signoff**（簽核：確認可以下線）。
+>
+> **業界會用嗎？** 會，每一項都是業界標準做法：
+> - **繞線後 STA**：最後算數的時序結果。
+> - **Signoff ECO**：STA 抓到違規後，回 APR 做小幅修改再重新驗證，這個循環在業界很常見。業界常用 PrimeTime ECO 或 Tweaker 這類工具自動產生修改指令；`apr_signoff_eco.tcl` 是它的簡化版。
+> - **繞線後等價驗證**：APR 加了時脈樹和 buffer，netlist 又被改過，所以要再證明一次。
+> - **繞線後閘級模擬**：同第 5 步，業界只跑部分測試。
 
 | 檔案 | 工具 | 做什麼 | 成功標記 |
 |---|---|---|---|
