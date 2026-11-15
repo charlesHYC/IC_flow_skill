@@ -2,14 +2,16 @@
 
 **把一份 Verilog 程式一路做成晶片版圖（RTL → GDS），每一步都有腳本、有說明、有判定。**
 
-這是給 [Claude Code](https://claude.com/claude-code)（Anthropic 的 AI 寫程式助手，在終端機裡使用）用的教學包。對象是第一次接觸數位 IC 後段流程的學生，例如做完 IC Contest 題目、想知道「合成之後還要做什麼」的人。
+對象是第一次接觸數位 IC 後段流程的學生，例如做完 IC Contest 題目、想知道「合成之後還要做什麼」的人。
+
+它是一個標準格式的 **skill**（一個資料夾，裡面有 `SKILL.md` 說明檔和腳本），**OpenAI Codex、Claude Code 等支援 skill 的 AI 程式助手都能用**；裝進去之後，你用中文問 IC 流程的問題，AI 助手就會照這份教材回答、幫你建專案和跑腳本。
 
 裝好之後你會得到兩樣東西：
 
 | | 是什麼 | 你可以拿它做什麼 |
 |---|---|---|
-| **`digital-ic-flow` skill** | 給 Claude 看的「教材＋腳本範本」 | 問 Claude「下一步要做什麼？」「這個 DRC 錯誤是什麼意思？」「幫我寫 PrimeTime 腳本」，它會照這份教材回答，並用裡面的公版腳本幫你建專案、跑流程 |
-| **`/ic_flow` 面板** | Claude Code 裡的即時進度面板 | 看專案跑到哪一步、哪一步 PASS／FAIL、關鍵數字；點任一階段看白話說明 |
+| **`digital-ic-flow` skill** | 給 AI 助手看的「教材＋腳本範本」 | 問 AI 助手「下一步要做什麼？」「這個 DRC 錯誤是什麼意思？」「幫我寫 PrimeTime 腳本」，它會照這份教材回答，並用裡面的公版腳本幫你建專案、跑流程 |
+| **`/ic_flow` 面板**（選用） | 即時進度面板（目前只有 Claude Code 能用） | 看專案跑到哪一步、哪一步 PASS／FAIL、關鍵數字；點任一階段看白話說明 |
 
 > 腳本整理自實際做過的 lab（IC Contest 的 geofence、REFRACT），在 SAED32 教學製程與 CBDK_IC_Contest 上跑過，[完整流程的結果](#五分鐘體驗不用裝-eda-工具)放在 `examples/`。
 
@@ -66,7 +68,7 @@ flowchart LR
 | DRC／LVS | 可以完全通過 | 最多到 `PAD_LIMITED`（見[限制](#需求與限制)） |
 | 適合 | 先把流程跑通 | 想看完整晶片長什麼樣子 |
 
-不確定的話，**兩種都跑來比較**。Claude 每次開始跑流程前都會問你選哪一種。
+不確定的話，**兩種都跑來比較**。AI 助手每次開始跑流程前都會問你選哪一種。
 
 ---
 
@@ -101,34 +103,27 @@ python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/ge
 
 完整表格：[geofence_core](examples/geofence_core/flow_table.txt)（全部 PASS）、[geofence_pad](examples/geofence_pad/flow_table.txt)。表格每一欄的意思見[看懂結果](#看懂結果)。
 
-裝好 plugin 之後，在 Claude Code 輸入 `/ic_flow <你 clone 的路徑>/examples/geofence_pad`，就能在面板上點每個階段看說明和動畫。
+用 Claude Code 並裝了面板的話，輸入 `/ic_flow <你 clone 的路徑>/examples/geofence_pad`，就能在面板上點每個階段看說明和動畫。
 
 ---
 
 ## 安裝
 
-**先準備**：裝好 [Claude Code](https://claude.com/claude-code)，在終端機輸入 `claude` 能啟動。
+skill 本身就是 `skills/digital-ic-flow/` 這個資料夾，把它複製到你的 AI 助手讀 skill 的地方就好。
 
-### 方法一：一次裝好 skill＋面板（建議）
-
-1. 在終端機輸入 `claude` 啟動 Claude Code。
-2. 在提示列輸入：
-   ```
-   /plugin install ic-flow --marketplace charlesHYC/IC_flow_skill
-   ```
-3. 出現 `Add marketplace?` 時按 `y`。
-4. 選安裝範圍時直接按 Enter（user：所有專案都能用）。
-5. 看到 `Installed ic-flow` 就完成了。輸入 `/ic_flow` 試試看。
-
-不想進 Claude Code 的話，也可以直接在 shell 輸入：
+### OpenAI Codex
 
 ```bash
-claude plugin install ic-flow --marketplace charlesHYC/IC_flow_skill
+git clone https://github.com/charlesHYC/IC_flow_skill.git
+mkdir -p ~/.codex/skills
+cp -r IC_flow_skill/skills/digital-ic-flow ~/.codex/skills/
 ```
 
-桌面版 App（`/plugin` 不能用時）：點提示框旁的 **+** → **Plugins** → **Add marketplace**，輸入 `charlesHYC/IC_flow_skill`，再按 **Add plugin**。
+重新啟動 `codex` 就會生效。之後直接用中文問 IC 流程的問題即可；想明確指定時，可以在訊息裡打 `$digital-ic-flow`。
 
-### 方法二：只要 skill，不要面板
+### Claude Code
+
+只要 skill：
 
 ```bash
 git clone https://github.com/charlesHYC/IC_flow_skill.git
@@ -136,7 +131,17 @@ mkdir -p ~/.claude/skills
 cp -r IC_flow_skill/skills/digital-ic-flow ~/.claude/skills/
 ```
 
-重新啟動 Claude Code 就會生效。
+想要 skill＋`/ic_flow` 面板一起裝，在 Claude Code 的提示列輸入：
+
+```
+/plugin install ic-flow --marketplace charlesHYC/IC_flow_skill
+```
+
+出現 `Add marketplace?` 時按 `y`，選安裝範圍時直接按 Enter，看到 `Installed ic-flow` 就完成了。
+
+### 其他 AI 助手
+
+支援 `SKILL.md` 格式的工具，照它的說明把 `skills/digital-ic-flow/` 放到 skill 資料夾即可。不支援的話，也可以把 `SKILL.md` 的內容貼給它當作說明，腳本在 `templates/` 裡照樣能用。
 
 ---
 
@@ -159,17 +164,17 @@ my_project/
 ├── rtl/        你的 Verilog
 ├── tb/         testbench
 ├── patterns/   測資
-├── scripts/    公版腳本（Claude 幫你複製進來）
+├── scripts/    公版腳本（AI 助手幫你複製進來）
 └── runs/       每個階段的輸出，一個階段一個資料夾
 ```
 
-### 第 2 步：請 Claude 幫你建專案
+### 第 2 步：請 AI 助手幫你建專案
 
-在 `my_project/` 裡啟動 `claude`，直接用中文說：
+在 `my_project/` 裡啟動你的 AI 助手（`codex` 或 `claude`），直接用中文說：
 
 > 用 digital-ic-flow 幫我把這個設計建成完整流程，設計叫 geofence，clock 是 clk、30 ns。
 
-Claude 會：
+它會：
 
 1. 先問你要**無 PAD、有 PAD 還是兩種都跑**。
 2. 把公版腳本複製到 `scripts/`。
@@ -207,12 +212,12 @@ bash scripts/run_all.sh
 
 `run_all.sh` 遇到失敗會停下來，修正回圈（例如 DRC 有小錯就自動補、繞線後時序差一點就自動換大顆元件）會自己跑。
 
-也可以直接叫 Claude 跑：「幫我跑合成，跑完告訴我面積和 slack。」
+也可以直接叫 AI 助手跑：「幫我跑合成，跑完告訴我面積和 slack。」
 
 ### 第 4 步：看進度
 
 - **終端機**：`bash scripts/run_stage.sh status`，隨時印出流程表格。
-- **Claude Code 面板**：輸入 `/ic_flow`，右邊會開即時面板，每 5 秒更新：
+- **`/ic_flow` 面板**（Claude Code 裝了 plugin 才有）：輸入 `/ic_flow`，右邊會開即時面板，每 5 秒更新：
   - 正在跑的階段有轉圈動畫 `⠋ RUNNING`。
   - **點任一階段**，下面會顯示這一步在做什麼（What）、怎樣算過（Pass）、產出什麼（Output）、關鍵數字（Numbers）、log 裡的結果行（Results）和 log 位置。
   - 下方 **History** 列出跑過的專案，點一下或按 1–5 切換。
@@ -261,10 +266,10 @@ bash scripts/run_all.sh
 
 1. **看是哪一步 FAIL**：`bash scripts/run_stage.sh status`，或在 `/ic_flow` 點那一列看 Results。
 2. **看 log**：每一步的輸出都在 `runs/<階段>/console.log`。
-3. **直接問 Claude**：
+3. **直接問 AI 助手**：
    > synthesis FAIL 了，幫我看 runs/synthesis/console.log 是什麼問題。
 
-   這個 skill 裡有一份「實際踩過的坑」清單（[`pitfalls.md`](skills/digital-ic-flow/references/pitfalls.md)），Claude 會先對照它。
+   這個 skill 裡有一份「實際踩過的坑」清單（[`pitfalls.md`](skills/digital-ic-flow/references/pitfalls.md)），AI 助手會先對照它。
 4. **修好後重跑那一步**，例如 `bash scripts/run_stage.sh synthesis`，再繼續往下。
 
 ---
@@ -272,7 +277,7 @@ bash scripts/run_all.sh
 ## 常見問題
 
 **Q：我沒有 Synopsys 工具，可以用嗎？**
-可以看 demo、讀教材、問 Claude 流程的問題；但要真的跑流程，需要學校或公司的 Synopsys 授權與伺服器。
+可以看 demo、讀教材、問 AI 助手流程的問題；但要真的跑流程，需要學校或公司的 Synopsys 授權與伺服器。
 
 **Q：可以用在比賽嗎？**
 IC Contest 通常只評到第 5 步（RTL 模擬＋合成後閘級模擬），第 6–9 步是延伸練習。比賽用 CBDK_IC_Contest 製程時，把 `PROCESS` 設成 `cbdk`。
@@ -281,7 +286,7 @@ IC Contest 通常只評到第 5 步（RTL 模擬＋合成後閘級模擬），�
 不是。SAED32 教學製程的 PAD library 自己的版圖檔和規格檔彼此不一致，加 PAD 的晶片一定會有這些錯誤。腳本會幫你確認錯誤都在 PAD 裡、你的電路是乾淨的。要完全乾淨的 DRC／LVS，用無 PAD 模式。
 
 **Q：看不懂縮寫（STA、CTS、SDF…）？**
-看 [`glossary.md`](skills/digital-ic-flow/references/glossary.md)，每個縮寫都有全名和白話解釋；或直接問 Claude「SDF 是什麼？」。
+看 [`glossary.md`](skills/digital-ic-flow/references/glossary.md)，每個縮寫都有全名和白話解釋；或直接問 AI 助手「SDF 是什麼？」。
 
 **Q：每一步的原理在哪裡？**
 [`flow_stages.md`](skills/digital-ic-flow/references/flow_stages.md)：每個階段的目的、做法、檢查清單。
@@ -291,7 +296,7 @@ IC Contest 通常只評到第 5 步（RTL 模擬＋合成後閘級模擬），�
 ## 需求與限制
 
 **需求**
-- Claude Code
+- 支援 skill 的 AI 程式助手：OpenAI Codex、Claude Code 等
 - Python 3
 - 真的要跑流程時：Synopsys VCS、Design Compiler、Formality、PrimeTime、IC Compiler II、IC Validator、StarRC（要自己有授權）
 - 製程：SAED32 EDK 或 CBDK_IC_Contest
@@ -310,7 +315,7 @@ IC Contest 通常只評到第 5 步（RTL 模擬＋合成後閘級模擬），�
 ```
 IC_flow_skill/
 ├── skills/digital-ic-flow/          ← skill 本體
-│   ├── SKILL.md                     給 Claude 看的總說明與規則
+│   ├── SKILL.md                     給 AI 助手看的總說明與規則
 │   ├── references/
 │   │   ├── flow_stages.md           每個階段的原理與檢查清單
 │   │   ├── pitfalls.md              實際踩過的錯誤與解法
@@ -319,8 +324,8 @@ IC_flow_skill/
 │       ├── 00_common/               總設定 flow_config.tcl、run_stage.sh、run_all.sh、流程表格
 │       ├── 01_rtl_sim/ … 07_signoff/  各階段腳本
 ├── examples/                        兩個跑完的 demo（無 PAD／有 PAD）
-├── hooks/  types/                   /ic_flow 面板的程式
-└── .claude-plugin/                  plugin 安裝設定
+├── hooks/  types/                   /ic_flow 面板的程式（Claude Code plugin，選用）
+└── .claude-plugin/                  Claude Code plugin 安裝設定（選用）
 ```
 
 ## 授權

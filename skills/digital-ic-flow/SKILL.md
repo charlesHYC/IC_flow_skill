@@ -42,7 +42,7 @@ description: Digital IC (cell-based) RTL-to-GDS design flow guide with ready-to-
 | DRC／LVS | 可以 CLEAN／PASS | SAED32 io_std 有 library 問題，最好只能到 **PAD_LIMITED**（不是 PASS） |
 | 製程 | saed32、cbdk | 只有 saed32（CBDK_IC_Contest_v2.5 沒有 IO PAD library，設了會直接報錯） |
 
-**每次要跑流程前都要問，沒有例外**：開新專案、`run_all.sh`、示範跑、測試跑、重跑，只要會執行流程，就先用 AskUserQuestion 問一次，不可以沿用上一次的選擇，也不可以自己挑。這個 skill 是教學用的，選項固定三個：
+**每次要跑流程前都要問，沒有例外**：開新專案、`run_all.sh`、示範跑、測試跑、重跑，只要會執行流程，就先問使用者一次（工具有選擇題介面時用它，例如 Claude Code 的 AskUserQuestion；沒有就用文字列出選項等使用者回答），不可以沿用上一次的選擇，也不可以自己挑。這個 skill 是教學用的，選項固定三個：
 
 1. 兩種都跑（教學建議）：`USE_PAD 0` 與 `USE_PAD 1` 各一個專案目錄，可以並行。跑完一起回報，對照 PAD 延遲、1 pF 負載、die 大小與 DRC/LVS 結果的差別。
 2. 只做核心（`USE_PAD 0`）
@@ -76,13 +76,13 @@ bash scripts/run_stage.sh fm_post     # 9b
 bash scripts/run_stage.sh gate_post   # 9c 繞線後 netlist＋SDF 模擬
 ```
 
-**終端機流程表格**：`run_all.sh` 結束時（含中途 STOP）會在終端機印出一張表，每一列是一個階段，依流程順序排列：`RTL_coding (vcs_simulation)`、`Synthesis (design_compiler_synthesis)`、`Formality (function_checking)`……一直到 `Gate_post (vcs_postroute_sdf)`。每一列有狀態（PASS／FAIL／PAD_LIMITED／RUNNING／-）、關鍵數字（slack、面積、DRC 分類…）、耗時；`*` 是修正回圈，`xN` 是這一輪跑了幾次。任何時候都可以用 `bash scripts/run_stage.sh status` 叫出來（不會執行任何工具；在 Claude Code 裡輸入 `! bash scripts/run_stage.sh status`）。回報流程結果時，先附上這張表。
+**終端機流程表格**：`run_all.sh` 結束時（含中途 STOP）會在終端機印出一張表，每一列是一個階段，依流程順序排列：`RTL_coding (vcs_simulation)`、`Synthesis (design_compiler_synthesis)`、`Formality (function_checking)`……一直到 `Gate_post (vcs_postroute_sdf)`。每一列有狀態（PASS／FAIL／PAD_LIMITED／RUNNING／-）、關鍵數字（slack、面積、DRC 分類…）、耗時；`*` 是修正回圈，`xN` 是這一輪跑了幾次。任何時候都可以用 `bash scripts/run_stage.sh status` 叫出來（只讀狀態檔，不會執行任何 EDA 工具）。回報流程結果時，先附上這張表。
 
-**專案歷史**：`flow_dashboard.py` 每次執行都會把專案路徑登記到 `~/.claude/ic-flow/projects.txt`；`python3 scripts/flow_dashboard.py --history` 列出所有跑過的專案（正在跑的在前，其次依最後活動時間）。Claude Code 的 `/ic_flow` 面板用它自動找專案、顯示歷史。
+**專案歷史**：`flow_dashboard.py` 每次執行都會把專案路徑登記到 `~/.claude/ic-flow/projects.txt`；`python3 scripts/flow_dashboard.py --history` 列出所有跑過的專案（正在跑的在前，其次依最後活動時間）。選用的 `/ic_flow` 面板用它自動找專案、顯示歷史。
 
-**`/ic_flow` 面板**：裝了本 repo 的 plugin 時，在 Claude Code 輸入 `/ic_flow`（自動跟隨最近有動的專案）或 `/ic_flow <專案路徑>`，右側會開一個即時更新的面板：同一張流程表，點任一階段可以看白話說明、通過標準、產出、關鍵數字、log 結果行與該階段的動畫；下方 History 可切換專案，Esc 關閉。資料來自 `flow_dashboard.py --json`，判定全部來自 `run_stage.sh` 寫的 `runs/<stage>/status.txt`，面板本身不判定通過與否。
+**`/ic_flow` 面板（選用，目前只有 Claude Code）**：裝了本 repo 的 Claude Code plugin 時，輸入 `/ic_flow`（自動跟隨最近有動的專案）或 `/ic_flow <專案路徑>`，右側會開一個即時更新的面板：同一張流程表，點任一階段可以看白話說明、通過標準、產出、關鍵數字、log 結果行與該階段的動畫；下方 History 可切換專案，Esc 關閉。資料來自 `flow_dashboard.py --json`，判定全部來自 `run_stage.sh` 寫的 `runs/<stage>/status.txt`，面板本身不判定通過與否。
 
-**跑完後的回報**：每次 `run_all.sh` 結束（`ALL_STAGES_PASS`、`ALL_STAGES_DONE_PAD_LIMITED` 或中途 STOP），或使用者請你跑完一串階段之後，先貼終端機流程表格，再用文字說明結果；並提醒可以用 `/ic_flow` 看每個階段的細節。
+**跑完後的回報**：每次 `run_all.sh` 結束（`ALL_STAGES_PASS`、`ALL_STAGES_DONE_PAD_LIMITED` 或中途 STOP），或使用者請你跑完一串階段之後，先貼終端機流程表格，再用文字說明結果；使用者有 `/ic_flow` 面板時，提醒可以用它看每個階段的細節。
 
 APR 之後有三個「修正回圈」，都是從實際報告自動抓問題，不用手寫 cell 名稱：`eco`（ICC2 估計 RC 下的違規）、`drc_patch`（ICV 的 M1 細條）、`signoff_eco`（StarRC＋PT 下的違規）。每個都會先 `save_block -as <name>_before…` 留備份。
 
