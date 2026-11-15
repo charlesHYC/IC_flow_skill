@@ -168,51 +168,123 @@ my_project/
 └── runs/       每個階段的輸出，一個階段一個資料夾
 ```
 
-### 第 2 步：請 AI 助手幫你建專案
+### 第 2 步：建專案、改設定（手動）
 
-在 `my_project/` 裡啟動你的 AI 助手（`codex` 或 `claude`），直接用中文說：
+**(1) 把公版腳本複製到 `scripts/`**（所有階段的腳本放在同一層）：
 
-> 用 digital-ic-flow 幫我把這個設計建成完整流程，設計叫 geofence，clock 是 clk、30 ns。
+```bash
+cd my_project
+mkdir -p scripts
+cp <IC_flow_skill 的路徑>/skills/digital-ic-flow/templates/*/* scripts/
+```
 
-它會：
+**(2) 改這幾個檔案**。每個腳本開頭都有標「依設計修改」的區塊，只要改那裡：
 
-1. 先問你要**無 PAD、有 PAD 還是兩種都跑**。
-2. 把公版腳本複製到 `scripts/`。
-3. 幫你填好 `scripts/flow_config.tcl` 這個總設定檔，最重要的幾行是：
-   ```tcl
-   set DESIGN     geofence                       ;# 你的 top module 名稱
-   set RTL_FILES  [list $PROJ/rtl/geofence.v]    ;# RTL 檔案
-   set CLK_PORT   clk                            ;# 時脈 port
-   set PERIOD     30.0                           ;# 時脈週期（ns）
-   set USE_PAD    0                              ;# 0 = 無 PAD，1 = 有 PAD
-   set PROCESS    saed32                         ;# saed32 或 cbdk
-   ```
-4. 填好模擬腳本開頭的 tb 路徑、測資、成功字串。
+| 檔案 | 要改什麼 |
+|---|---|
+| `scripts/flow_config.tcl` | **總設定**，最重要（見下面） |
+| `scripts/run_rtl_sim.sh`、`scripts/run_gate_sim.sh` | tb 路徑 `TB`、tb 的 top `TOP`、測資 `PATTERNS`、成功字串 `PASS_MARKER`、`DESIGN` |
+| `scripts/constraints_saed32.sdc`（SAED32）或 `constraints.sdc`（CBDK） | 輸入／輸出延遲、輸出負載；比賽有規定就照規定 |
+| `scripts/run_icv_drc.sh`、`run_icv_lvs.sh`、`run_starrc.sh` | `DESIGN`、製程檔路徑 |
 
-也可以自己改這些檔案，每個腳本開頭都有標「依設計修改」的區塊。
+`flow_config.tcl` 最重要的幾行：
+
+```tcl
+set DESIGN     geofence                       ;# 你的 top module 名稱
+set RTL_FILES  [list $PROJ/rtl/geofence.v]    ;# RTL 檔案
+set CLK_PORT   clk                            ;# 時脈 port
+set PERIOD     30.0                           ;# 時脈週期（ns）
+set USE_PAD    0                              ;# 0 = 無 PAD，1 = 有 PAD
+set PROCESS    saed32                         ;# saed32 或 cbdk
+```
+
+再往下還有製程檔路徑（`/mnt/nfs/opt/PROCESS/...`），請改成你機器上的位置。
+
+**(3) 載入 EDA 工具環境**：各學校／公司的方式不同，例如 `source /usr/cad/synopsys/CIC/...` 或 `module load ...`。確認 `vcs`、`dc_shell`、`fm_shell`、`pt_shell`、`icc2_shell`、`icv` 打得出來。`scripts/run_stage.sh` 第 8 行預設是 `source /.bash_EDA`，請改成你的方式。
+
+> 不想手動改的話，也可以請 AI 助手代勞：在 `my_project/` 裡啟動 `codex` 或 `claude`，說「用 digital-ic-flow 幫我把這個設計建成完整流程，設計叫 geofence，clock 是 clk、30 ns」。它會先問要不要上 PAD，再幫你複製、填好上面這些檔案。
 
 ### 第 3 步：跑起來
 
-**一個階段一個階段跑**（第一次建議這樣，比較好理解每步在做什麼）：
+有兩種跑法，結果完全一樣：
+
+- **方法 A：用包裝好的腳本**（建議）。`run_stage.sh` 會幫你切到正確的資料夾、存 log、自動讀報告判定 PASS／FAIL、更新流程表格。
+- **方法 B：自己下工具指令**。想知道每一步實際跑了什麼，或要在別的環境手動跑時用。
+
+#### 方法 A：`run_stage.sh`
 
 ```bash
-bash scripts/run_stage.sh rtl_sim      # 1 RTL 模擬
-bash scripts/run_stage.sh synthesis    # 2 合成
-bash scripts/run_stage.sh formality    # 3 等價驗證
-bash scripts/run_stage.sh sta          # 4 STA
-bash scripts/run_stage.sh gate_sim     # 5 閘級模擬
-# …之後是 ndm、apr、eco、finish、drc、lvs、starrc、pt_post、fm_post、gate_post
+bash scripts/run_stage.sh pad          # 0  只有 USE_PAD 1 才會做事
+bash scripts/run_stage.sh rtl_sim      # 1  RTL 模擬
+bash scripts/run_stage.sh synthesis    # 2  合成
+bash scripts/run_stage.sh formality    # 3  等價驗證
+bash scripts/run_stage.sh sta          # 4  STA（三個 corner）
+bash scripts/run_stage.sh gate_sim     # 5  閘級模擬
+bash scripts/run_stage.sh ndm          # 6-0 建 APR 用的 library
+bash scripts/run_stage.sh apr          # 6  floorplan → place → CTS → route
+bash scripts/run_stage.sh eco          # 6  修剩下的 max_cap／transition
+bash scripts/run_stage.sh finish       # 6  補 filler、寫出 GDS 與 netlist
+bash scripts/run_stage.sh drc          # 7a DRC
+bash scripts/run_stage.sh lvs          # 7b LVS
+bash scripts/run_stage.sh starrc       # 8  寄生萃取
+bash scripts/run_stage.sh pt_post      # 9a 繞線後 STA
+bash scripts/run_stage.sh fm_post      # 9b 繞線後等價驗證
+bash scripts/run_stage.sh gate_post    # 9c 繞線後閘級模擬
 ```
 
-**或一次全部跑完**（geofence 約 20–30 分鐘）：
+一次全部跑完（geofence 約 20–30 分鐘），遇到失敗會停，修正回圈會自己跑：
 
 ```bash
 bash scripts/run_all.sh
 ```
 
-`run_all.sh` 遇到失敗會停下來，修正回圈（例如 DRC 有小錯就自動補、繞線後時序差一點就自動換大顆元件）會自己跑。
+#### 方法 B：每一步的實際指令
 
-也可以直接叫 AI 助手跑：「幫我跑合成，跑完告訴我面積和 slack。」
+規則都一樣：**先建好並進到 `runs/<階段>/` 資料夾**（`mkdir -p runs/<階段>/reports`，報告會寫在 `reports/`），執行工具，把畫面輸出存成 log，最後**在 log 裡找成功標記**，找到才算過。下面的指令都從專案根目錄 `my_project/` 開始。
+
+| # | 階段 | 在哪個資料夾執行 | 指令 | log 裡要出現（行首） |
+|---|---|---|---|---|
+| 0 | PAD 規劃（只有 `USE_PAD 1`） | `runs/pad` | 見下方說明 | `PAD_PASS` |
+| 1 | RTL 模擬 | `runs/rtl_sim` | `bash ../../scripts/run_rtl_sim.sh` | `ALL PASS` |
+| 2 | 合成 | `runs/synthesis` | `dc_shell -f ../../scripts/dc_syn.tcl` | `DC_PASS` |
+| 3 | 等價驗證 | `runs/formality` | `fm_shell -f ../../scripts/fm_rtl2gate.tcl` | `FM_PASS` |
+| 4 | STA（三個 corner 各跑一次） | `runs/sta` | `FLOW_CORNER=slow pt_shell -f ../../scripts/pt_prelayout.tcl`，再把 `slow` 換成 `typical`、`fast` | `STA_PASS slow` 等 |
+| 5 | 閘級模擬 | `runs/gate_sim` | `bash ../../scripts/run_gate_sim.sh` | `GATE_SIM_PASS` |
+| 6-0 | 建 NDM library | `runs/ndm` | `icc2_lm_shell -f ../../scripts/build_ndm.tcl` | `NDM_PASS` |
+| 6 | APR | `runs/apr` | `icc2_shell -f ../../scripts/apr_core.tcl` | `APR_ROUTED` |
+| 6 | APR ECO | `runs/apr` | `icc2_shell -f ../../scripts/apr_eco.tcl` | `APR_PASS` |
+| 6 | Finish | `runs/finish` | `icc2_shell -f ../../scripts/apr_finish.tcl` | `FINISH_PASS` |
+| 7a | DRC | `runs/drc` | `bash ../../scripts/run_icv_drc.sh` | `DRC_PASS`（PAD 模式 `DRC_PAD_LIMITED`） |
+| 7b | LVS | `runs/lvs` | `bash ../../scripts/run_icv_lvs.sh` | `LVS_PASS`（PAD 模式 `LVS_PAD_LIMITED`） |
+| 8 | 寄生萃取 | `runs/starrc` | `bash ../../scripts/run_starrc.sh` | `STARRC_PASS` |
+| 9a | 繞線後 STA（三個 corner） | `runs/pt_post` | `FLOW_CORNER=slow pt_shell -f ../../scripts/pt_postroute.tcl`，再換 `typical`、`fast` | `POSTROUTE_STA_PASS slow` 等 |
+| 9b | 繞線後等價驗證 | `runs/fm_post` | `fm_shell -f ../../scripts/fm_postroute.tcl` | `FM_POST_PASS` |
+| 9c | 繞線後閘級模擬 | `runs/gate_post` | `POSTROUTE=1 bash ../../scripts/run_gate_sim.sh` | `GATE_SIM_PASS` |
+
+例如手動跑合成：
+
+```bash
+mkdir -p runs/synthesis/reports
+cd runs/synthesis
+dc_shell -f ../../scripts/dc_syn.tcl < /dev/null | tee console.log
+grep '^DC_PASS' console.log && echo "合成通過" || echo "合成失敗，看 console.log"
+cd ../..
+```
+
+幾個要注意的地方：
+
+- **`< /dev/null`**：tcl 中途出錯時，工具會停在提示字元等你輸入；接 `/dev/null` 會讓它直接結束，不會卡住。
+- **有 PAD 時**：所有工具都會讀 `flow_config.tcl` 的 `USE_PAD`，也可以臨時用環境變數覆蓋，例如 `USE_PAD=1 dc_shell -f ...`。
+- **第 0 步 PAD 規劃**的參數來自 `flow_config.tcl`（`IN_PAD`、`OUT_PAD`、IO library 路徑），手動跑時是兩行 Python：
+  ```bash
+  python3 scripts/pad_tools.py wrapper  <DESIGN> runs/pad <IN_PAD> <OUT_PAD> rtl/*.v
+  python3 scripts/pad_tools.py padmodel <IO 的 .lib> <IN_PAD> <OUT_PAD> runs/pad/io_pad_sim.v 0.10 5 0.10 1000
+  ```
+  第一行從 RTL 的 port 產生晶片外殼 `<DESIGN>_chip.v`，第二行從 IO library 查表算出 PAD 延遲。
+- **修正回圈**（只有出問題才要跑）：
+  - DRC 有 M1 細條錯誤：在 `runs/apr` 跑 `icc2_shell -f ../../scripts/apr_drc_patch.tcl`（成功標記 `DRC_PATCH_PASS`），再重跑 Finish → DRC。
+  - 繞線後 STA 有違規：在 `runs/apr` 跑 `icc2_shell -f ../../scripts/apr_signoff_eco.tcl`（`SIGNOFF_ECO_PASS`），再重跑 Finish → DRC → LVS → StarRC → 繞線後 STA。
+- 有些機器的 ICV／Formality 會和系統的 Kerberos 函式庫衝突而無法啟動，`run_stage.sh` 裡的 `krb_fix` 是當時的解法，你的環境不一定需要。
 
 ### 第 4 步：看進度
 
