@@ -11,24 +11,24 @@
 | **`digital-ic-flow` skill** | 給 Claude 看的「教材＋腳本範本」 | 問 Claude「下一步要做什麼？」「這個 DRC 錯誤是什麼意思？」「幫我寫 PrimeTime 腳本」，它會照這份教材回答，並用裡面的公版腳本幫你建專案、跑流程 |
 | **`/ic_flow` 面板** | Claude Code 裡的即時進度面板 | 看專案跑到哪一步、哪一步 PASS／FAIL、關鍵數字；點任一階段看白話說明 |
 
-> 腳本整理自實際做過的 lab（IC Contest 的 geofence、REFRACT），在 SAED32 教學製程與 CBDK_IC_Contest 上跑過，[完整流程的結果](#-五分鐘體驗不用裝-eda-工具)放在 `examples/`。
+> 腳本整理自實際做過的 lab（IC Contest 的 geofence、REFRACT），在 SAED32 教學製程與 CBDK_IC_Contest 上跑過，[完整流程的結果](#五分鐘體驗不用裝-eda-工具)放在 `examples/`。
 
 ---
 
 ## 目錄
 
-1. [先搞懂：這個流程在做什麼？](#-先搞懂這個流程在做什麼)
-2. [五分鐘體驗（不用裝 EDA 工具）](#-五分鐘體驗不用裝-eda-工具)
-3. [安裝](#-安裝)
-4. [用它跑你自己的設計](#-用它跑你自己的設計)
-5. [看懂結果](#-看懂結果)
-6. [卡關了怎麼辦](#-卡關了怎麼辦)
-7. [常見問題](#-常見問題)
-8. [需求、限制、檔案說明](#-需求與限制)
+1. [先搞懂：這個流程在做什麼？](#先搞懂這個流程在做什麼)
+2. [五分鐘體驗（不用裝 EDA 工具）](#五分鐘體驗不用裝-eda-工具)
+3. [安裝](#安裝)
+4. [用它跑你自己的設計](#用它跑你自己的設計)
+5. [看懂結果](#看懂結果)
+6. [卡關了怎麼辦](#卡關了怎麼辦)
+7. [常見問題](#常見問題)
+8. [需求、限制、檔案說明](#需求與限制)
 
 ---
 
-## 🧭 先搞懂：這個流程在做什麼？
+## 先搞懂：這個流程在做什麼？
 
 你寫的 Verilog（**RTL**）只是「描述電路行為的程式」。要變成真的晶片，還要經過一連串工具把它變成**邏輯閘**，再把邏輯閘**擺到矽晶片上、用金屬線連起來**，最後檢查做出來的東西**又快又正確、而且工廠做得出來**。
 
@@ -63,14 +63,14 @@ flowchart LR
 | 做到哪 | 只有你的電路本體 | 你的電路＋外圍一圈 PAD 的完整晶片 |
 | 時序 | 不考慮 PAD | 輸入多約 0.4 ns、輸出推 1 pF 約 1.3 ns，**從 RTL 模擬就看得到** |
 | 晶片大小 | 小（例：240 µm） | 被 PAD 數量撐大（例：920 µm） |
-| DRC／LVS | 可以完全通過 | 最多到 `PAD_LIMITED`（見[限制](#-需求與限制)） |
+| DRC／LVS | 可以完全通過 | 最多到 `PAD_LIMITED`（見[限制](#需求與限制)） |
 | 適合 | 先把流程跑通 | 想看完整晶片長什麼樣子 |
 
 不確定的話，**兩種都跑來比較**。Claude 每次開始跑流程前都會問你選哪一種。
 
 ---
 
-## 🚀 五分鐘體驗（不用裝 EDA 工具）
+## 五分鐘體驗（不用裝 EDA 工具）
 
 `examples/` 裡放了兩個**已經跑完**的 geofence 專案，一個無 PAD、一個有 PAD。只要有 Python 3 就能看結果：
 
@@ -99,13 +99,13 @@ python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/ge
   ALL_STAGES_DONE_PAD_LIMITED  全部跑完；DRC／LVS 只剩 IO library 的問題，這不等於 PASS。
 ```
 
-完整表格：[geofence_core](examples/geofence_core/flow_table.txt)（全部 PASS）、[geofence_pad](examples/geofence_pad/flow_table.txt)。表格每一欄的意思見[看懂結果](#-看懂結果)。
+完整表格：[geofence_core](examples/geofence_core/flow_table.txt)（全部 PASS）、[geofence_pad](examples/geofence_pad/flow_table.txt)。表格每一欄的意思見[看懂結果](#看懂結果)。
 
 裝好 plugin 之後，在 Claude Code 輸入 `/ic_flow <你 clone 的路徑>/examples/geofence_pad`，就能在面板上點每個階段看說明和動畫。
 
 ---
 
-## 📦 安裝
+## 安裝
 
 **先準備**：裝好 [Claude Code](https://claude.com/claude-code)，在終端機輸入 `claude` 能啟動。
 
@@ -140,7 +140,7 @@ cp -r IC_flow_skill/skills/digital-ic-flow ~/.claude/skills/
 
 ---
 
-## 🛠 用它跑你自己的設計
+## 用它跑你自己的設計
 
 ### 第 1 步：準備好這些檔案
 
@@ -220,7 +220,7 @@ bash scripts/run_all.sh
 
 ---
 
-## 📊 看懂結果
+## 看懂結果
 
 ### 表格的每一欄
 
@@ -236,7 +236,7 @@ bash scripts/run_all.sh
 | 狀態 | 意思 | 要做什麼 |
 |---|---|---|
 | `PASS` | 報告確認通過 | 繼續下一步 |
-| `FAIL` | 報告裡有問題 | 看 log，見[卡關了怎麼辦](#-卡關了怎麼辦) |
+| `FAIL` | 報告裡有問題 | 看 log，見[卡關了怎麼辦](#卡關了怎麼辦) |
 | `RUNNING` | 正在跑 | 等 |
 | `PAD_LIMITED` | 只有 PAD 模式會出現：你的電路沒問題，錯誤都在 PAD library 裡 | **這不是 PASS**，但已經是這套教學製程能做到的最好結果 |
 | `-` | 還沒跑 | |
@@ -257,7 +257,7 @@ bash scripts/run_all.sh
 
 ---
 
-## 🆘 卡關了怎麼辦
+## 卡關了怎麼辦
 
 1. **看是哪一步 FAIL**：`bash scripts/run_stage.sh status`，或在 `/ic_flow` 點那一列看 Results。
 2. **看 log**：每一步的輸出都在 `runs/<階段>/console.log`。
@@ -269,7 +269,7 @@ bash scripts/run_all.sh
 
 ---
 
-## ❓ 常見問題
+## 常見問題
 
 **Q：我沒有 Synopsys 工具，可以用嗎？**
 可以看 demo、讀教材、問 Claude 流程的問題；但要真的跑流程，需要學校或公司的 Synopsys 授權與伺服器。
@@ -288,7 +288,7 @@ IC Contest 通常只評到第 5 步（RTL 模擬＋合成後閘級模擬），�
 
 ---
 
-## 📋 需求與限制
+## 需求與限制
 
 **需求**
 - Claude Code
@@ -302,7 +302,7 @@ IC Contest 通常只評到第 5 步（RTL 模擬＋合成後閘級模擬），�
 
 **已知限制**
 - 有 PAD 模式只支援 SAED32（CBDK_IC_Contest 沒有 PAD library）。
-- 有 PAD 模式的 DRC／LVS 最多到 `PAD_LIMITED`（原因見[常見問題](#-常見問題)與 [`pitfalls.md`](skills/digital-ic-flow/references/pitfalls.md)）。
+- 有 PAD 模式的 DRC／LVS 最多到 `PAD_LIMITED`（原因見[常見問題](#常見問題)與 [`pitfalls.md`](skills/digital-ic-flow/references/pitfalls.md)）。
 - 還沒實測過：`PROCESS cbdk` 用本公版跑完全流程、雙向（inout）PAD、`io_std` 以外的 PAD library。
 
 ### 檔案說明
