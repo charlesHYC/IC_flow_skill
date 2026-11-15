@@ -1,0 +1,10 @@
+{
+  "name": "ic-flow",
+  "version": "0.2.0",
+  "description": "Digital IC (cell-based) RTL-to-GDS 教學流程：digital-ic-flow skill（Synopsys VCS/DC/Formality/PT/ICC2/ICV/StarRC 公版腳本）＋ /ic_flow 流程狀態面板",
+  "author": { "name": "charlesHYC", "url": "https://github.com/charlesHYC" },
+  "repository": "https://github.com/charlesHYC/IC_flow_skill",
+  "license": "MIT",
+  "keywords": ["digital-ic", "asic", "synopsys", "eda", "saed32", "rtl-to-gds"],
+  "types": "./types/index.d.ts"
+}

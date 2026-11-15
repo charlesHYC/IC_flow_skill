@@ -1,0 +1,11 @@
+{
+  "name": "ic-flow-skill",
+  "owner": { "name": "charlesHYC" },
+  "plugins": [
+    {
+      "name": "ic-flow",
+      "source": "./",
+      "description": "digital-ic-flow skill＋/ic_flow 流程狀態面板"
+    }
+  ]
+}

@@ -1,0 +1,303 @@
+#!/usr/bin/env python3
+"""pad_tools.py — USE_PAD=1 專用的小工具（只用 Python 標準函式庫）
+
+  wrapper <design> <out_dir> <in_pad> <out_pad> <rtl.v ...>
+      設計一開始（pad 階段，RTL 模擬之前）讀 RTL top module 的 port，產生晶片 wrapper：
+        <out_dir>/<design>_chip.v  純結構 Verilog-1995（RTL 模擬、DC、Formality、ICC2 共用；
+                                   ICC2 的 netlist reader 不吃 `input wire` 與 `ifdef）
+        <out_dir>/pad_plan.tcl     訊號 PAD 實例名稱（依 port 順序），APR 用來排 PAD
+      每個 input bit 接一個 input PAD，每個 output bit 接一個 output PAD；inout 不支援。
+      支援 ANSI（module m(input wire [W-1:0] a, ...)）與 Verilog-1995 兩種 port 寫法；
+      位寬可以用 module 的 parameter（用預設值計算）。
+
+  padmodel <io.lib> <in_pad> <out_pad> <out.v> <in_tran_ns> <in_load_ff> <out_tran_ns> <out_load_ff>
+      產生「帶延遲」的 PAD 模擬 model（官方 IO Verilog model 沒有 specify block，PAD 在
+      模擬裡是零延遲）：
+        * 延遲從 IO library 的 NLDM 表查（bilinear 內插／外插，和 STA 工具相同算法）
+        * 邏輯沿用官方 RECEIVER／DRIVER（編譯時用 -v <IO_MODEL> 引入），PG 在 model 內固定
+          為有效（PG 連接由 LVS 檢查，不靠模擬）
+        * 沒有 SDF 時（RTL 模擬）用 specify 的預設值；有 SDF 時（閘級模擬）被 SDF 的
+          IOPATH 覆蓋，所以 PAD 延遲在 RTL、佈局前、繞線後模擬都看得到
+
+  simnet <routed_pg.v> <top> <out.v>
+      把 ICC2 含 PG 的繞線後 netlist 改成可以模擬的版本：
+        * 標準元件的 Verilog model 沒有 PG port → 拿掉 std cell 實例上的 .VDD/.VSS
+        * top 的 PG port 改成內部 supply1/supply0，PAD 上的 PG 連線保留
+"""
+import re
+import sys
+from pathlib import Path
+
+PG = ("VDD", "VSS", "VDDIO", "VSSIO")
+
+
+def strip_comments(text):
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+    return re.sub(r"//[^\n]*", "", text)
+
+
+def eval_int(expr, params):
+    expr = expr.strip()
+    for k in sorted(params, key=len, reverse=True):
+        expr = re.sub(r"\b%s\b" % k, "(%s)" % params[k], expr)
+    if not re.fullmatch(r"[0-9+\-*/() ]+", expr):
+        sys.exit("cannot evaluate port range '%s' (only parameters and + - * / are supported)" % expr)
+    return int(eval(expr.replace("/", "//")))
+
+
+def top_ports(rtl_files, design):
+    text = "\n".join(strip_comments(Path(f).read_text()) for f in rtl_files)
+    m = re.search(r"\bmodule\s+%s\b\s*(#\s*\((.*?)\)\s*)?\((.*?)\)\s*;(.*?)\bendmodule"
+                  % re.escape(design), text, re.S)
+    if not m:
+        sys.exit("module %s not found in %s" % (design, " ".join(rtl_files)))
+    header, body = m.group(3), m.group(4)
+    params = {}
+    for src in (m.group(2) or "", body):
+        for k, v in re.findall(r"\b(?:parameter|localparam)\b[^;=]*?\b(\w+)\s*=\s*([^,;)]+)", src):
+            params[k] = str(eval_int(v, params))
+    decl_re = r"\b(input|output|inout)\b\s*(?:wire|reg|logic|signed|\s)*(\[[^\]]+\])?\s*"
+
+    def rng(r):
+        if not r:
+            return None, None
+        a, b = r.strip("[] ").split(":")
+        return eval_int(a, params), eval_int(b, params)
+
+    ports = []
+    if re.search(r"\b(input|output|inout)\b", header):
+        # ANSI：方向／位寬沿用到下一個宣告
+        d = msb = lsb = None
+        for item in header.split(","):
+            dm = re.match(r"\s*" + decl_re + r"(\w+)\s*$", item)
+            if dm:
+                d = dm.group(1); msb, lsb = rng(dm.group(2)); name = dm.group(3)
+            else:
+                name = item.strip()
+            ports.append((name, d, msb, lsb))
+    else:
+        info = {}
+        for d, r, names in re.findall(decl_re + r"([^;]+);", body):
+            msb, lsb = rng(r)
+            for n in names.split(","):
+                info[n.strip()] = (d, msb, lsb)
+        for p in [x.strip() for x in header.split(",") if x.strip()]:
+            if p not in info:
+                sys.exit("cannot find direction of port %s" % p)
+            ports.append((p,) + info[p])
+    for p, d, _, _ in ports:
+        if d == "inout":
+            sys.exit("inout port %s: bidirectional PAD is not supported by this template" % p)
+    return ports
+
+
+def bits(msb, lsb):
+    if msb is None:
+        return [None]
+    step = -1 if msb >= lsb else 1
+    return list(range(msb, lsb + step, step))
+
+
+def wrapper(design, out_dir, in_pad, out_pad, *rtl_files):
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    ports = top_ports(rtl_files, design)
+    chip = design + "_chip"
+    decl, wires, pads, conns, names, outs = [], [], [], [], [], []
+    for p, d, msb, lsb in ports:
+        r = "" if msb is None else "[%d:%d] " % (msb, lsb)
+        decl.append("%s %s%s;" % (d, r, p))
+        wires.append("wire %score_%s;" % (r, p))
+        conns.append(".%s(core_%s)" % (p, p))
+        for b in bits(msb, lsb):
+            sel = "" if b is None else "[%d]" % b
+            inst = "pad_%s" % p if b is None else "pad_%s_%d" % (p, b)
+            names.append(inst)
+            if d == "input":
+                pads.append("%s %s(.PADIO(%s%s), .DOUT(core_%s%s), .R_EN(1'b1));" % (in_pad, inst, p, sel, p, sel))
+            else:
+                outs.append(inst)
+                pads.append("%s %s(.PADIO(%s%s), .DIN(core_%s%s), .EN(1'b1));" % (out_pad, inst, p, sel, p, sel))
+    lines = ["// generated by pad_tools.py wrapper from the RTL ports — regenerate instead of editing",
+             "module %s(%s);" % (chip, ", ".join(p for p, _, _, _ in ports))]
+    lines += ["  " + x for x in decl + wires + pads]
+    lines += ["  %s u_core(%s);" % (design, ", ".join(conns)), "endmodule", ""]
+    (out / (chip + ".v")).write_text("\n".join(lines))
+    (out / "pad_plan.tcl").write_text(
+        "# generated by pad_tools.py — signal PAD instances in port order\n"
+        "set SIGNAL_PADS {%s}\nset OUTPUT_PADS {%s}\n" % (" ".join(names), " ".join(outs)))
+    print("PAD_WRAPPER %s: %d signal pads (%d in, %d out)" % (chip, len(names), len(names) - len(outs), len(outs)))
+
+
+# ---------------- Liberty NLDM ----------------
+def lib_block(text, kind, name, start=0):
+    m = re.compile(r"\b%s\s*\(\s*\"?%s\"?\s*\)\s*\{" % (kind, re.escape(name))).search(text, start)
+    if not m:
+        return None
+    depth, i = 1, m.end()
+    while depth:
+        c = text[i]
+        depth += (c == "{") - (c == "}")
+        i += 1
+    return text[m.end():i - 1]
+
+
+def sub_blocks(text, kind):
+    out, pos = [], 0
+    pat = re.compile(r"\b%s\s*\(([^)]*)\)\s*\{" % kind)
+    while True:
+        m = pat.search(text, pos)
+        if not m:
+            return out
+        depth, i = 1, m.end()
+        while depth:
+            depth += (text[i] == "{") - (text[i] == "}")
+            i += 1
+        out.append((m.group(1).strip().strip('"'), text[m.end():i - 1]))
+        pos = i
+
+
+def nums(s):
+    return [float(x) for x in re.findall(r"-?[0-9.]+(?:e-?\d+)?", s)]
+
+
+def lookup(table, tran, load):
+    i1 = nums(re.search(r"index_1\s*\(([^)]*)\)", table).group(1))
+    i2 = nums(re.search(r"index_2\s*\(([^)]*)\)", table).group(1))
+    v = nums(re.search(r"values\s*\((.*?)\)\s*;", table, re.S).group(1))
+    rows = [v[k * len(i2):(k + 1) * len(i2)] for k in range(len(i1))]
+
+    def seg(ix, x):  # 最近的兩個點（超出範圍時用端點兩點外插）
+        k = 0
+        while k < len(ix) - 2 and x > ix[k + 1]:
+            k += 1
+        return k, (x - ix[k]) / (ix[k + 1] - ix[k])
+    a, fa = seg(i1, tran)
+    b, fb = seg(i2, load)
+    r0 = rows[a][b] + (rows[a][b + 1] - rows[a][b]) * fb
+    r1 = rows[a + 1][b] + (rows[a + 1][b + 1] - rows[a + 1][b]) * fb
+    return r0 + (r1 - r0) * fa
+
+
+def arcs(lib, cell, out_pin, tran, load):
+    """回傳 {(related_pin, timing_type): (rise, fall)}，單位跟 library（ns）"""
+    body = lib_block(lib, "cell", cell)
+    if body is None:
+        sys.exit("cell %s not found in IO library" % cell)
+    pin = lib_block(body, "pin", out_pin)
+    res = {}
+    for _, t in sub_blocks(pin, "timing"):
+        rel = re.search(r'related_pin\s*:\s*"?(\w+)', t).group(1)
+        tt = (re.search(r'timing_type\s*:\s*"?(\w+)', t) or [None, "combinational"])[1]
+        tabs = dict(sub_blocks(t, "cell_rise") and [("rise", sub_blocks(t, "cell_rise")[0][1])] or [])
+        tabs.update(sub_blocks(t, "cell_fall") and [("fall", sub_blocks(t, "cell_fall")[0][1])] or [])
+        if "rise" in tabs and "fall" in tabs:
+            res[(rel, tt)] = (lookup(tabs["rise"], tran, load), lookup(tabs["fall"], tran, load))
+    return res
+
+
+def padmodel(io_lib, in_pad, out_pad, dst, in_tran, in_load, out_tran, out_load):
+    lib = Path(io_lib).read_text(errors="replace")
+    ia = arcs(lib, in_pad, "DOUT", float(in_tran), float(in_load))
+    oa = arcs(lib, out_pad, "PADIO", float(out_tran), float(out_load))
+
+    def d(a, key):
+        if key not in a:
+            sys.exit("timing arc %s not found in IO library" % (key,))
+        return "(%.4f, %.4f)" % a[key]
+    pg = "VDD, VSS, VDDIO, VSSIO"
+    text = """// generated by pad_tools.py padmodel — PAD simulation model WITH delay
+// source library : %(lib)s
+// delays (ns)    : %(in_pad)s PADIO->DOUT at tran %(it)s ns / load %(il)s fF
+//                  %(out_pad)s DIN->PADIO at tran %(ot)s ns / load %(ol)s fF
+// Logic comes from the official RECEIVER / DRIVER (compile with -v <IO_MODEL>);
+// PG is tied valid inside the model. SDF IOPATH overrides these defaults.
+`timescale 1ns/1ps
+`celldefine
+module %(in_pad)s(PADIO, DOUT, R_EN, %(pg)s);
+  input PADIO, R_EN;
+  output DOUT;
+  inout %(pg)s;
+  wire dout_i;
+  supply1 pwr; supply0 gnd;
+  RECEIVER RECEIVER(.pad(PADIO), .EN(R_EN), .DOUT(dout_i),
+                    .VDD(pwr), .VSS(gnd), .VDDIO(pwr), .VSSIO(gnd));
+  buf b0(DOUT, dout_i);
+  specify
+    (PADIO => DOUT) = %(d_in)s;
+    (R_EN => DOUT) = %(d_ren)s;
+  endspecify
+endmodule
+`endcelldefine
+
+`celldefine
+module %(out_pad)s(PADIO, DIN, EN, %(pg)s);
+  inout PADIO;
+  input DIN, EN;
+  inout %(pg)s;
+  wire pad_i;
+  supply1 pwr; supply0 gnd;
+  DRIVER DRIVER(.DIN(DIN), .EN(EN), .pad(pad_i),
+                .VDD(pwr), .VSS(gnd), .VDDIO(pwr), .VSSIO(gnd));
+  nmos n0(PADIO, pad_i, 1'b1);
+  specify
+    (DIN => PADIO) = %(d_out)s;
+    (EN => PADIO) = %(d_en)s;
+  endspecify
+endmodule
+`endcelldefine
+""" % dict(lib=io_lib, in_pad=in_pad, out_pad=out_pad, pg=pg, it=in_tran, il=in_load, ot=out_tran,
+           ol=out_load, d_in=d(ia, ("PADIO", "combinational")), d_ren=d(ia, ("R_EN", "combinational")),
+           d_out=d(oa, ("DIN", "combinational")), d_en=d(oa, ("EN", "three_state_enable")))
+    Path(dst).write_text(text)
+    print("PAD_DELAY %s PADIO->DOUT rise/fall = %.3f/%.3f ns" % ((in_pad,) + ia[("PADIO", "combinational")]))
+    print("PAD_DELAY %s DIN->PADIO rise/fall = %.3f/%.3f ns (load %s fF)"
+          % ((out_pad,) + oa[("DIN", "combinational")] + (out_load,)))
+
+
+def simnet(src, top, dst):
+    text = Path(src).read_text()
+    out = []
+    # 以分號切成 statement；只處理 cell 實例與 top 的 port 宣告
+    # （Python 3.6 的 re.split 不支援零寬度 pattern，所以用 str.split 再補回分號）
+    parts = text.split(";")
+    for stmt in [p + ";" for p in parts[:-1]] + parts[-1:]:
+        s = stmt
+        inst = re.match(r"\s*(\w+)\s+(\\?\S+)\s*\(", s)
+        # SAED32 標準元件名稱都以 _RVT/_HVT/_LVT 結尾；IO cell 沒有這個後綴
+        if inst and re.search(r"_(RVT|HVT|LVT)$", inst.group(1)):
+            # 標準元件：去掉 PG pin 連線
+            s = re.sub(r",?\s*\.(VDD|VSS)\s*\(\s*\w+\s*\)", "", s)
+            s = re.sub(r"\(\s*,", "(", s)
+        out.append(s)
+    text = "".join(out)
+    # top 的 PG port → 內部 supply
+    m = re.search(r"\bmodule\s+%s\b" % re.escape(top), text)
+    if not m:
+        sys.exit("module %s not found" % top)
+    head_end = text.index(";", m.end())
+    head = text[m.start():head_end]
+    for n in PG:
+        head = re.sub(r",\s*%s\b" % n, "", head)
+        head = re.sub(r"\(\s*%s\s*,\s*" % n, "(", head)
+    body = text[head_end:]
+    end = body.index("endmodule")
+    mod = body[:end]
+    for n in PG:
+        mod = re.sub(r"\n\s*(inout|input|output)\s+%s\s*;" % n, "", mod)
+        mod = re.sub(r"\n\s*wire\s+%s\s*;" % n, "", mod)
+    mod = "; supply1 VDD, VDDIO; supply0 VSS, VSSIO;" + mod[1:]
+    text = text[:m.start()] + head + mod + body[end:]
+    Path(dst).write_text(text)
+    print("PAD_SIMNET wrote %s" % dst)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) >= 7 and sys.argv[1] == "wrapper":
+        wrapper(*sys.argv[2:])
+    elif len(sys.argv) == 10 and sys.argv[1] == "padmodel":
+        padmodel(*sys.argv[2:])
+    elif len(sys.argv) >= 2 and sys.argv[1] == "simnet" and len(sys.argv) == 5:
+        simnet(*sys.argv[2:])
+    else:
+        sys.exit(__doc__)
