@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
-"""flow_dashboard.py — 依 design flow 順序產生專案儀表板（只用 Python 標準函式庫）
+"""flow_dashboard.py — 依 design flow 順序整理專案狀態（只用 Python 標準函式庫）
 
-  python3 scripts/flow_dashboard.py <proj>      → 寫出 <proj>/runs/dashboard.html
+  python3 scripts/flow_dashboard.py <proj>            → 終端機流程表格
+  python3 scripts/flow_dashboard.py <proj> --json     → JSON（Claude Code 的 /ic_flow 面板讀這個）
+  python3 scripts/flow_dashboard.py --history         → 跑過的專案清單（JSON）
 
-run_stage.sh 每個階段結束都會自動呼叫，run_all.sh 結束時（含中途 STOP）也會呼叫，
-所以流程跑到一半時打開也看得到目前進度（執行中會每 30 秒自動重新整理）。
+run_stage.sh 每個階段結束都會呼叫（順便把專案登記到 ~/.claude/ic-flow/projects.txt），
+run_all.sh 結束時（含中途 STOP）印出表格；`run_stage.sh status` 隨時叫出表格。
 
-資料來源（全部是流程本身寫出的檔案，儀表板不自己判定通過與否）：
+資料來源（全部是流程本身寫出的檔案，這裡不自己判定通過與否）：
   runs/<stage>/status.txt      run_stage.sh 寫的結果：PASS / FAIL / PAD_LIMITED / SKIP / RUNNING
   runs/stage_history.log       這一輪每次執行的紀錄（修正回圈會讓同一階段跑好幾次）
   各階段 console log 與報告     slack、面積、DRC/LVS 分類、ECO 動作等數字
 沒有 status.txt 的舊專案，改用 log 裡的成功標記推斷（與 run_stage.sh 的判定相同）。
 """
-import html
 import os
 import re
 import sys
@@ -20,8 +21,7 @@ import time
 from pathlib import Path
 
 ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
-TEXT = "--text" in sys.argv          # 另外在終端機印出流程表格
-JSON = "--json" in sys.argv          # 只印 JSON（Claude Code 的 /flow 面板讀這個），不寫 HTML
+JSON = "--json" in sys.argv          # 印 JSON 給 /ic_flow 面板；沒有就印終端機表格（--text 也是表格）
 PROJ = Path(ARGS[0] if ARGS else ".").resolve()
 RUNS = PROJ / "runs"
 
@@ -319,32 +319,6 @@ def metric(sid):
     return out
 
 
-# ---------------- HTML ----------------
-LABEL = {"PASS": "PASS", "FAIL": "FAIL", "PAD_LIMITED": "PAD_LIMITED", "SKIP": "略過",
-         "RUNNING": "執行中", "NOTRUN": "未執行", "NOTNEEDED": "不需要"}
-E = html.escape
-
-
-def card(s, st, dur, runs):
-    sid, num, name, tool, crit, log, marker, kind = s
-    ms = "".join('<div class="kv"><span>%s</span><b>%s</b></div>' % (E(k), E(v)) for k, v in metric(sid))
-    meta = []
-    if dur is not None and st not in ("RUNNING", "SKIP"):
-        meta.append("%d 分 %02d 秒" % divmod(dur, 60) if dur >= 60 else "%d 秒" % dur)
-    if len(runs) > 1:
-        meta.append("這一輪跑了 %d 次" % len(runs))
-    if sid in TRIGGER:
-        flow = '<p class="out trig">%s</p>' % E(TRIGGER[sid])
-    else:
-        flow = '<p class="out">產出 → %s</p>' % E(OUTPUT.get(sid, "").format(top=TOP, design=DESIGN))
-    logp = RUNS / log
-    link = '<a href="%s">log</a>' % E(os.path.relpath(logp, RUNS)) if logp.exists() else ""
-    return ('<article class="stage s-%s%s"><header><span class="num">%s</span><span class="pill">%s</span></header>'
-            '<h3>%s</h3><p class="tool">%s</p><p class="crit">%s</p>%s%s<footer>%s%s</footer></article>'
-            % (st.lower(), " fix" if kind == "fix" else "", E(num), LABEL[st], E(name), E(tool), E(crit), ms, flow,
-               E(" · ".join(meta)), (" · " if meta and link else "") + link))
-
-
 ROWS = []   # (stage 定義, 狀態, 耗時, 這一輪執行次數)，終端機表格用
 
 
@@ -434,7 +408,7 @@ def text_table(headline, overall):
         out.append("│ " + " │ ".join(cells) + " │")
     out.append(line("└", "┴", "┘"))
     out.append("  " + paint({"pass": "PASS", "fail": "FAIL", "pad_limited": "PAD_LIMITED", "running": "RUNNING"}.get(overall, "NOTRUN"), headline[0]) + "  " + headline[1])
-    out.append("  * = 修正回圈（上一步發現問題才會跑）   xN = 這一輪跑了 N 次   詳細：runs/dashboard.html")
+    out.append("  * = 修正回圈（上一步發現問題才會跑）   xN = 這一輪跑了 N 次")
     print("\n".join(out))
 
 
@@ -469,9 +443,7 @@ def json_out(headline, overall):
 
 def main():
     stages, overall = [], "PASS"
-    body = []
     for phase, items in PHASES:
-        cards = []
         for s in items:
             sid, kind = s[0], s[7]
             st, dur, _ = status(sid, s[5], s[6])
@@ -481,8 +453,6 @@ def main():
                 st = "NOTNEEDED"
             stages.append((s, st))
             ROWS.append((s, st, dur, len(HIST.get(sid, []))))
-            cards.append(card(s, st, dur, HIST.get(sid, [])))
-        body.append('<section class="phase"><h2>%s</h2><div class="row">%s</div></section>' % (E(phase), "".join(cards)))
     sts = [st for s, st in stages if s[7] != "fix"]
     running = "RUNNING" in sts
     if running:
@@ -504,122 +474,12 @@ def main():
         "INCOMPLETE": ("INCOMPLETE", "還有階段沒跑。"),
     }[overall]
 
-    # 時序表：佈局前 vs 繞線後，每個 corner
-    trs = []
-    for c in ("slow", "typical", "fast"):
-        def cell(rows, i):
-            v = rows.get(c, (None, None))[i]
-            return '<td class="%s">%s</td>' % ("neg" if v is not None and v < 0 else "", ns(v))
-        trs.append("<tr><th>%s</th>%s%s%s%s</tr>" % (c, cell(PRE, 0), cell(PRE, 1), cell(POST, 0), cell(POST, 1)))
-    timing = ('<section class="panel wide"><h2>時序（slack）</h2><table><thead><tr><th>corner</th><th>佈局前 setup</th>'
-              '<th>佈局前 hold</th><th>繞線後 setup</th><th>繞線後 hold</th></tr></thead><tbody>%s</tbody></table>'
-              '<p class="note">佈局前用 wire-load 估計；繞線後用 StarRC 萃取的實際 RC。%s</p></section>'
-              % ("".join(trs), "PAD 模式兩者都含 PAD 延遲與 1 pF 板級負載。" if USE_PAD else ""))
-
-    # 執行紀錄：依時間順序列出這一輪每一次執行（看得出修正回圈）
-    hist = sorted(((t0, sid, r, d) for sid, v in HIST.items() for r, t0, d in v))
-    hrows = "".join('<tr><td>%s</td><td>%s</td><td><span class="pill p-%s">%s</span></td><td>%s</td></tr>'
-                    % (time.strftime("%H:%M:%S", time.localtime(t0)), E(sid), r.lower(), LABEL.get(r, r),
-                       "%d:%02d" % divmod(d, 60)) for t0, sid, r, d in hist)
-    histp = ('<section class="panel"><h2>這一輪的執行紀錄</h2><table><thead><tr><th>開始</th><th>階段</th><th>結果</th>'
-             '<th>耗時</th></tr></thead><tbody>%s</tbody></table></section>' % hrows) if hrows else ""
-
-    limits = ""
-    if USE_PAD:
-        limits = ('<section class="panel warn"><h2>PAD 模式要知道的事</h2><ul>'
-                  '<li><b>PAD_LIMITED 不是 PASS</b>：腳本已確認核心區 DRC 為 0、所有 MOS／電阻都對上，剩下的錯誤在 SAED32 io_std library 內（LEF／GDS／CDL 不一致）。</li>'
-                  '<li>LVS 中 VDD／VSS／VDDIO／VSSIO 在 layout 併成同一個 net，是 IO library 造成的（拿掉 PAD→ring 接線也一樣）。</li>'
-                  '<li>要乾淨的 DRC／LVS 證據，另外用 <code>USE_PAD 0</code> 跑核心。</li></ul></section>')
-
     if JSON:
         json_out(headline, overall)
-        return
-    refresh = '<meta http-equiv="refresh" content="30">' if overall == "RUNNING" else ""
-    page = TEMPLATE % dict(
-        refresh=refresh, title=E("%s %s flow" % (DESIGN, "PAD" if USE_PAD else "core")), design=E(DESIGN), top=E(TOP),
-        mode="USE_PAD 1：含 IO PAD 的全晶片" if USE_PAD else "USE_PAD 0：只做核心",
-        process=E(cfg("PROCESS", "?")), period=E(cfg("PERIOD", "?")), clk=E(cfg("CLK_PORT", "?")),
-        overall=overall.lower(), headline=E(headline[0]), sub=E(headline[1]),
-        now=time.strftime("%Y-%m-%d %H:%M:%S"), proj=E(str(PROJ)),
-        phases="".join(body), timing=timing, hist=histp, limits=limits)
-    (RUNS).mkdir(parents=True, exist_ok=True)
-    (RUNS / "dashboard.html").write_text(page)
-    if TEXT:
-        text_table(headline, overall.lower())
     else:
-        print("DASHBOARD %s (%s)" % (RUNS / "dashboard.html", headline[0]))
+        text_table(headline, overall.lower())
 
 
-TEMPLATE = """<!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-%(refresh)s<title>%(title)s</title>
-<style>
-:root{--bg:#f6f7f9;--panel:#fff;--ink:#1d232b;--mute:#5d6875;--line:#dde2e8;
- --pass:#1f7a4d;--pass-bg:#e3f4ea;--fail:#b42318;--fail-bg:#fde8e6;--lim:#a15c00;--lim-bg:#fff1d6;
- --run:#1d5fb8;--run-bg:#e2edfb;--off:#7b8794;--off-bg:#eef1f4}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--panel:#1b2128;--ink:#e6eaef;--mute:#9aa6b2;--line:#2d3540;
- --pass:#5cc98f;--pass-bg:#17352a;--fail:#ff8a7a;--fail-bg:#3d1e1b;--lim:#f2b45a;--lim-bg:#3a2c14;
- --run:#7fb2ff;--run-bg:#18304f;--off:#8794a1;--off-bg:#232a33}}
-:root[data-theme="dark"]{--bg:#12161b;--panel:#1b2128;--ink:#e6eaef;--mute:#9aa6b2;--line:#2d3540;
- --pass:#5cc98f;--pass-bg:#17352a;--fail:#ff8a7a;--fail-bg:#3d1e1b;--lim:#f2b45a;--lim-bg:#3a2c14;
- --run:#7fb2ff;--run-bg:#18304f;--off:#8794a1;--off-bg:#232a33}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
- font:14px/1.5 system-ui,-apple-system,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif}
-main{max-width:1240px;margin:0 auto;padding:24px 16px 48px}
-.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
-h1{margin:0;font-size:22px}.sub{color:var(--mute);margin:2px 0 0}
-.facts{display:flex;flex-wrap:wrap;gap:6px}.facts span{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 9px;color:var(--mute)}
-.facts b{color:var(--ink);font-weight:600}
-.banner{border-radius:10px;padding:14px 18px;margin-bottom:22px;border:1px solid var(--line);background:var(--panel)}
-.banner strong{font-size:18px;letter-spacing:.02em}.banner p{margin:2px 0 0;color:var(--mute)}
-.o-pass{border-left:6px solid var(--pass)}.o-pass strong{color:var(--pass)}
-.o-fail{border-left:6px solid var(--fail)}.o-fail strong{color:var(--fail)}
-.o-pad_limited{border-left:6px solid var(--lim)}.o-pad_limited strong{color:var(--lim)}
-.o-running{border-left:6px solid var(--run)}.o-running strong{color:var(--run)}
-.o-incomplete{border-left:6px solid var(--off)}
-.phase{margin-bottom:20px}.phase h2,.panel h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:0 0 8px}
-.row{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:10px}
-.stage{position:relative;background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--off);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column}
-.stage.fix{border-style:dashed;border-top-style:solid}
-.stage header{display:flex;justify-content:space-between;align-items:center}
-.num{font-weight:700;color:var(--mute);font-variant-numeric:tabular-nums}
-.stage h3{margin:4px 0 0;font-size:15px}.tool{margin:0;color:var(--mute);font-size:12px}
-.crit{margin:6px 0;font-size:12px;color:var(--mute);border-left:2px solid var(--line);padding-left:6px}
-.kv{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;border-top:1px dotted var(--line);padding:2px 0}
-.kv span{color:var(--mute)}.kv b{font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
-.out{margin:6px 0 0;font-size:12px;color:var(--ink)}.out.trig{color:var(--lim)}
-.stage footer{margin-top:auto;padding-top:6px;font-size:12px;color:var(--mute)}
-a{color:var(--run)}
-.pill{font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--off-bg);color:var(--off)}
-.s-pass{border-top-color:var(--pass)}.s-pass .pill,.p-pass{background:var(--pass-bg);color:var(--pass)}
-.s-fail{border-top-color:var(--fail)}.s-fail .pill,.p-fail{background:var(--fail-bg);color:var(--fail)}
-.s-pad_limited{border-top-color:var(--lim)}.s-pad_limited .pill,.p-pad_limited{background:var(--lim-bg);color:var(--lim)}
-.s-running{border-top-color:var(--run)}.s-running .pill,.p-running{background:var(--run-bg);color:var(--run)}
-.s-skip,.s-notneeded{opacity:.6}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin-top:8px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto}
-.panel.wide{grid-column:1/-1}.panel.warn{border-left:4px solid var(--lim)}.panel ul{margin:0;padding-left:18px}
-table{border-collapse:collapse;width:100%%;font-variant-numeric:tabular-nums}
-th,td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
-thead th{color:var(--mute);font-weight:600;font-size:12px}td.neg{color:var(--fail);font-weight:700}
-.note{color:var(--mute);font-size:12px;margin:8px 0 0}
-.legend{display:flex;flex-wrap:wrap;gap:12px;color:var(--mute);font-size:12px;margin:-6px 0 18px}
-code{font-size:12px}
-footer.page{margin-top:24px;color:var(--mute);font-size:12px}
-</style></head><body><main>
-<div class="top"><div><h1>%(design)s — design flow</h1><p class="sub">%(mode)s · top = <code>%(top)s</code></p></div>
-<div class="facts"><span>製程 <b>%(process)s</b></span><span>週期 <b>%(period)s ns</b></span><span>clock <b>%(clk)s</b></span></div></div>
-<div class="banner o-%(overall)s"><strong>%(headline)s</strong><p>%(sub)s</p></div>
-<div class="legend"><span>卡片依流程順序排列；每張卡寫出這一步的通過標準。</span><span>虛線框 = 修正回圈（上一步發現問題才會跑）</span><span>判定結果全部來自 run_stage.sh 與各階段 log，儀表板不自己判定。</span></div>
-%(phases)s
-<div class="grid2">%(timing)s%(limits)s%(hist)s</div>
-<footer class="page">產生時間 %(now)s · <code>%(proj)s</code> · 由 scripts/flow_dashboard.py 產生</footer>
-</main></body></html>
-"""
-
-# ---------------- 專案歷史（/ic_flow 面板的 history） ----------------
-# 每次產生報表就把專案登記到 ~/.claude/ic-flow/projects.txt（一行一個路徑），
-# --history 列出所有還存在的專案，最近有動的在前，正在跑的最前面。
 REGISTRY = Path.home() / ".claude" / "ic-flow" / "projects.txt"
 
 

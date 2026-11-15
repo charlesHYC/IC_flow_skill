@@ -26,4 +26,4 @@
 │ Gate_post (vcs_postroute_sdf)                │ PASS        │ SDF $removal warn 17/17                  │ 0:07     │
 └──────────────────────────────────────────────┴─────────────┴──────────────────────────────────────────┴──────────┘
   ALL_STAGES_DONE_PAD_LIMITED  全部跑完；DRC／LVS 只剩 IO library 的問題，這不等於 PASS。
-  * = 修正回圈（上一步發現問題才會跑）   xN = 這一輪跑了 N 次   詳細：runs/dashboard.html
+  * = 修正回圈（上一步發現問題才會跑）   xN = 這一輪跑了 N 次

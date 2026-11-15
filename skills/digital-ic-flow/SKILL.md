@@ -80,19 +80,9 @@ bash scripts/run_stage.sh gate_post   # 9c 繞線後 netlist＋SDF 模擬
 
 **專案歷史**：`flow_dashboard.py` 每次執行都會把專案路徑登記到 `~/.claude/ic-flow/projects.txt`；`python3 scripts/flow_dashboard.py --history` 列出所有跑過的專案（正在跑的在前，其次依最後活動時間）。Claude Code 的 `/ic_flow` 面板用它自動找專案、顯示歷史。
 
-**流程儀表板**：每個階段結束時，`run_stage.sh` 都會更新 `runs/dashboard.html`（`run_all.sh` 結束或中途 STOP 時也會更新），用瀏覽器打開就能看到整個 design flow：
+**`/ic_flow` 面板**：裝了本 repo 的 plugin 時，在 Claude Code 輸入 `/ic_flow`（自動跟隨最近有動的專案）或 `/ic_flow <專案路徑>`，右側會開一個即時更新的面板：同一張流程表，點任一階段可以看白話說明、通過標準、產出、關鍵數字、log 結果行與該階段的動畫；下方 History 可切換專案，Esc 關閉。資料來自 `flow_dashboard.py --json`，判定全部來自 `run_stage.sh` 寫的 `runs/<stage>/status.txt`，面板本身不判定通過與否。
 
-- 依流程順序（0 設計決策 → 前段 → APR → Signoff）列出每個階段的卡片。
-- 每張卡寫出：狀態（PASS／FAIL／PAD_LIMITED／執行中／未執行）、通過標準、關鍵數字（slack、面積、DRC 分類、LVS 對上的元件數…）、這一步交給下一步的產出、耗時、log 連結。
-- 修正回圈（drc_patch、signoff_eco）用虛線框，並寫出觸發條件；這一輪跑了幾次也會顯示。
-- 下方有三個 corner 的佈局前／繞線後 slack 對照表，以及這一輪依時間排序的執行紀錄。執行中時頁面每 30 秒自動重新整理。
-- 判定結果全部來自 `run_stage.sh` 寫的 `runs/<stage>/status.txt`，儀表板本身不判定通過與否。手動產生：`python3 scripts/flow_dashboard.py .`。
-
-**跑完後一定要問要不要開儀表板**：每次 `run_all.sh` 結束（`ALL_STAGES_PASS`、`ALL_STAGES_DONE_PAD_LIMITED` 或中途 STOP），或使用者請你跑完一串階段之後，先用文字回報結果，再用 AskUserQuestion 問「要不要打開流程儀表板？」，選項：
-1. 要，發布成網頁連結（建議）：用 Artifact 工具發布 `runs/dashboard.html`。同一個專案之前發布過的話，用同一個檔案路徑重新發布，網址不變。
-2. 不要，只看文字結果。
-
-發布前先執行 `python3 scripts/flow_dashboard.py .`，確保內容是最新的。另外要告訴使用者：網頁是快照，不會自己更新；log 連結只有本機檔案點得開；本機要即時看，可以在有圖形介面的環境執行 `firefox runs/dashboard.html &`（執行中每 30 秒自動重新整理）。
+**跑完後的回報**：每次 `run_all.sh` 結束（`ALL_STAGES_PASS`、`ALL_STAGES_DONE_PAD_LIMITED` 或中途 STOP），或使用者請你跑完一串階段之後，先貼終端機流程表格，再用文字說明結果；並提醒可以用 `/ic_flow` 看每個階段的細節。
 
 APR 之後有三個「修正回圈」，都是從實際報告自動抓問題，不用手寫 cell 名稱：`eco`（ICC2 估計 RC 下的違規）、`drc_patch`（ICV 的 M1 細條）、`signoff_eco`（StarRC＋PT 下的違規）。每個都會先 `save_block -as <name>_before…` 留備份。
 
@@ -123,7 +113,7 @@ APR 之後有三個「修正回圈」，都是從實際報告自動抓問題，�
 
 ```
 templates/
-  00_common/  flow_config.tcl  run_stage.sh  run_all.sh  flow_dashboard.py（runs/dashboard.html）
+  00_common/  flow_config.tcl  run_stage.sh  run_all.sh  flow_dashboard.py（流程表格／--json／--history）
   01_rtl_sim/ run_rtl_sim.sh
   02_synthesis/ dc_syn.tcl  constraints.sdc  constraints_saed32.sdc
   03_formality/ fm_rtl2gate.tcl

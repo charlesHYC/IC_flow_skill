@@ -25,8 +25,8 @@ out="$PROJ/runs/$stage${corner:+_$corner}"
 mkdir -p "$out/reports"
 cd "$out"
 
-# 儀表板用：每個階段寫 status.txt（RUNNING → PASS／FAIL／PAD_LIMITED／SKIP），
-# 並在 runs/stage_history.log 記一筆；結束後重新產生 runs/dashboard.html
+# 流程表格／/ic_flow 面板用：每個階段寫 status.txt（RUNNING → PASS／FAIL／PAD_LIMITED／SKIP），
+# 並在 runs/stage_history.log 記一筆；結束後把專案登記到 /ic_flow 的歷史
 t0=$(date +%s); SKIPPED=0
 echo "RUNNING $t0" > "$out/status.txt"
 record() {

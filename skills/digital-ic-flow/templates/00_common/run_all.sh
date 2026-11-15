@@ -5,10 +5,10 @@
 # 結尾印 ALL_STAGES_DONE_PAD_LIMITED（不是 PASS）。
 # 2026-11-11 以這支腳本在乾淨目錄跑 geofence（SAED32，USE_PAD=0）：ALL_STAGES_PASS，約 24 分鐘。
 cd "${1:-$(dirname -- "${BASH_SOURCE[0]}")/..}"; set -o pipefail
-# 新的一輪：清掉上一輪的階段歷史（儀表板的「執行次數」只算這一輪）；結束時（含中途 STOP）更新儀表板
+# 新的一輪：清掉上一輪的階段歷史（流程表格的「執行次數」只算這一輪）
 mkdir -p runs; : > runs/stage_history.log
-exec > >(tee runs/run_all.log) 2>&1     # 儀表板也讀這份（沒有 status.txt 的階段用它判斷）
-# 結束時（含中途 STOP）在終端機印出流程表格，並更新 runs/dashboard.html
+exec > >(tee runs/run_all.log) 2>&1     # 流程表格也讀這份（沒有 status.txt 的階段用它判斷）
+# 結束時（含中途 STOP）在終端機印出流程表格
 trap 'python3 scripts/flow_dashboard.py . --text' EXIT
 st() { echo "=== $1 $(date +%T)"; timeout 5400 bash scripts/run_stage.sh "$1" 2>&1 | tail -3; }
 for s in pad rtl_sim synthesis formality sta gate_sim ndm apr eco finish; do st $s || { echo "STOP at $s"; exit 1; }; done

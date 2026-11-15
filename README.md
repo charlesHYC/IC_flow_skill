@@ -22,7 +22,7 @@
 | 8 | 寄生萃取 | StarRC |
 | 9 | 繞線後 STA／Formality／SDF 模擬 | PrimeTime、Formality、VCS |
 
-每個腳本最後都會解析報告並印出成功標記，**判定依據是報告內容，不是工具的 exit code**。`run_stage.sh` 會把每一步的結果寫進 `runs/<stage>/status.txt`，並更新 `runs/dashboard.html`（瀏覽器可看的流程儀表板）。
+每個腳本最後都會解析報告並印出成功標記，**判定依據是報告內容，不是工具的 exit code**。`run_stage.sh` 會把每一步的結果寫進 `runs/<stage>/status.txt`，終端機表格和 `/ic_flow` 面板都讀這些檔案。
 
 這個 skill 是教學用的：每次要跑流程前，Claude 都會先問你要跑「無 PAD（只有核心）」、「有 PAD（全晶片）」還是兩種都跑，方便比較 PAD 延遲、1 pF 負載、die 大小與 DRC／LVS 的差別。
 
@@ -61,22 +61,15 @@ cp -r IC_flow_skill/skills/digital-ic-flow ~/.claude/skills/
 4. 看進度：
    - Claude Code 裡輸入 `/ic_flow`（自動跟隨最近有動的專案）或 `/ic_flow <專案路徑>`，Esc 關閉。
    - 終端機：`bash scripts/run_stage.sh status`。
-   - 瀏覽器：`runs/dashboard.html`。
 
 ## Demo：geofence 跑完整個流程
 
-`examples/` 裡有兩個實際跑完的 geofence 專案（SAED32、30 ns），分別是無 PAD 與有 PAD 版本。只保留儀表板需要的資料：每個階段的 `status.txt` 和 log 裡的結果標記行。不含 netlist、GDS 或製程資料，所以不用裝 EDA 工具也能看。
+`examples/` 裡有兩個實際跑完的 geofence 專案（SAED32、30 ns），分別是無 PAD 與有 PAD 版本。只保留流程表格與面板需要的資料：每個階段的 `status.txt` 和 log 裡的結果標記行。不含 netlist、GDS 或製程資料，所以不用裝 EDA 工具也能看。
 
 | 專案 | 模式 | 結果 |
 |---|---|---|
 | [`examples/geofence_core`](examples/geofence_core) | `USE_PAD 0`（只有核心） | `ALL_STAGES_PASS`：DRC CLEAN、LVS PASS |
 | [`examples/geofence_pad`](examples/geofence_pad) | `USE_PAD 1`（加 IO PAD 的全晶片） | `ALL_STAGES_DONE_PAD_LIMITED` |
-
-**瀏覽器儀表板**（`runs/dashboard.html`，下圖為有 PAD 版本）：
-
-![geofence PAD 版流程儀表板](docs/dashboard_geofence_pad.png)
-
-無 PAD 版本的截圖：[docs/dashboard_geofence_core.png](docs/dashboard_geofence_core.png)
 
 **終端機表格**（`bash scripts/run_stage.sh status`，完整內容見 [examples/geofence_pad/flow_table.txt](examples/geofence_pad/flow_table.txt)）：
 
@@ -98,8 +91,7 @@ cp -r IC_flow_skill/skills/digital-ic-flow ~/.claude/skills/
 **自己打開看**（clone 之後）：
 
 ```bash
-firefox examples/geofence_pad/runs/dashboard.html          # 瀏覽器儀表板
-python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/geofence_core --text   # 終端機表格
+python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/geofence_pad   # 終端機表格
 ```
 
 裝了 plugin 的話，在 Claude Code 輸入 `/ic_flow <repo 路徑>/examples/geofence_pad` 就能在面板上看。點任一階段可以看說明、通過標準、產出、log 結果行和該階段的動畫。
@@ -117,8 +109,7 @@ python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/ge
 .claude-plugin/          plugin 與 marketplace 設定
 hooks/                   /ic_flow 面板（register.tsx、anim.ts、測試）
 types/                   面板的狀態型別
-examples/                demo 專案（geofence 無 PAD／有 PAD），可直接看儀表板
-docs/                    README 用的截圖
+examples/                demo 專案（geofence 無 PAD／有 PAD），可直接看流程表格與 /ic_flow 面板
 skills/digital-ic-flow/
   SKILL.md               skill 本體：流程總覽、使用規則
   references/            flow_stages.md（每階段原理）、pitfalls.md（踩過的坑）、glossary.md（縮寫對照）
