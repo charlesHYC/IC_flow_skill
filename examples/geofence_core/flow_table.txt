@@ -1,0 +1,29 @@
+
+  geofence design flow — USE_PAD 0 (core only)   top=geofence
+┌──────────────────────────────────────────────┬─────────────┬──────────────────────────────────────────┬──────────┐
+│ Stage (steps)                                │ Status      │ Key numbers                              │ Time     │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ PAD_planning (pad_wrapper, pad_delay_model)  │ skip        │                                          │          │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ RTL_coding (vcs_simulation)                  │ PASS        │                                          │          │
+│ Synthesis (design_compiler_synthesis)        │ PASS        │ area 5863.4, setup +0.137 ns             │          │
+│ Formality (function_checking)                │ PASS        │                                          │          │
+│ STA_prelayout (primetime_3corner)            │ PASS        │ setup +0.137 / hold +0.016 ns            │          │
+│ Gate_sim (vcs_sdf_simulation)                │ PASS        │ SDF $removal warn 17/17                  │          │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ NDM (icc2_library_build)                     │ PASS        │                                          │          │
+│ APR (floorplan_place_cts_route)              │ PASS        │                                          │          │
+│ APR_ECO (maxcap_transition_fix)              │ PASS        │ buffers +7                               │          │
+│ Finish (filler_gds_netlist)                  │ PASS        │                                          │          │
+│ DRC_patch (m1_patch) *                       │ PASS        │ M1 patched 4 / 4                         │          │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ DRC (icv_drc)                                │ PASS        │ CLEAN                                    │          │
+│ LVS (icv_lvs_transistor)                     │ PASS        │ PASS                                     │          │
+│ PEX (starrc_extraction)                      │ PASS        │ SPEF x3 corners                          │          │
+│ STA_postroute (primetime_spef)               │ PASS        │ setup +23.362 / hold +0.004 ns           │ 0:19     │
+│ Signoff_ECO (sizing_buffering) *             │ PASS        │ cells changed 9                          │          │
+│ Formality_post (routed_vs_rtl)               │ PASS        │                                          │ 2:37     │
+│ Gate_post (vcs_postroute_sdf)                │ PASS        │ SDF $removal warn 17/17                  │ 0:07     │
+└──────────────────────────────────────────────┴─────────────┴──────────────────────────────────────────┴──────────┘
+  ALL_STAGES_PASS  全部階段通過。
+  * = 修正回圈（上一步發現問題才會跑）   xN = 這一輪跑了 N 次   詳細：runs/dashboard.html

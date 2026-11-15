@@ -511,7 +511,7 @@ def main():
             v = rows.get(c, (None, None))[i]
             return '<td class="%s">%s</td>' % ("neg" if v is not None and v < 0 else "", ns(v))
         trs.append("<tr><th>%s</th>%s%s%s%s</tr>" % (c, cell(PRE, 0), cell(PRE, 1), cell(POST, 0), cell(POST, 1)))
-    timing = ('<section class="panel"><h2>時序（slack）</h2><table><thead><tr><th>corner</th><th>佈局前 setup</th>'
+    timing = ('<section class="panel wide"><h2>時序（slack）</h2><table><thead><tr><th>corner</th><th>佈局前 setup</th>'
               '<th>佈局前 hold</th><th>繞線後 setup</th><th>繞線後 hold</th></tr></thead><tbody>%s</tbody></table>'
               '<p class="note">佈局前用 wire-load 估計；繞線後用 StarRC 萃取的實際 RC。%s</p></section>'
               % ("".join(trs), "PAD 模式兩者都含 PAD 延遲與 1 pF 板級負載。" if USE_PAD else ""))
@@ -598,7 +598,7 @@ a{color:var(--run)}
 .s-skip,.s-notneeded{opacity:.6}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin-top:8px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto}
-.panel.warn{border-left:4px solid var(--lim)}.panel ul{margin:0;padding-left:18px}
+.panel.wide{grid-column:1/-1}.panel.warn{border-left:4px solid var(--lim)}.panel ul{margin:0;padding-left:18px}
 table{border-collapse:collapse;width:100%%;font-variant-numeric:tabular-nums}
 th,td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
 thead th{color:var(--mute);font-weight:600;font-size:12px}td.neg{color:var(--fail);font-weight:700}

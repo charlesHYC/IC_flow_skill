@@ -63,6 +63,47 @@ cp -r IC_flow_skill/skills/digital-ic-flow ~/.claude/skills/
    - 終端機：`bash scripts/run_stage.sh status`。
    - 瀏覽器：`runs/dashboard.html`。
 
+## Demo：geofence 跑完整個流程
+
+`examples/` 裡有兩個實際跑完的 geofence 專案（SAED32、30 ns），分別是無 PAD 與有 PAD 版本。只保留儀表板需要的資料：每個階段的 `status.txt` 和 log 裡的結果標記行。不含 netlist、GDS 或製程資料，所以不用裝 EDA 工具也能看。
+
+| 專案 | 模式 | 結果 |
+|---|---|---|
+| [`examples/geofence_core`](examples/geofence_core) | `USE_PAD 0`（只有核心） | `ALL_STAGES_PASS`：DRC CLEAN、LVS PASS |
+| [`examples/geofence_pad`](examples/geofence_pad) | `USE_PAD 1`（加 IO PAD 的全晶片） | `ALL_STAGES_DONE_PAD_LIMITED` |
+
+**瀏覽器儀表板**（`runs/dashboard.html`，下圖為有 PAD 版本）：
+
+![geofence PAD 版流程儀表板](docs/dashboard_geofence_pad.png)
+
+無 PAD 版本的截圖：[docs/dashboard_geofence_core.png](docs/dashboard_geofence_core.png)
+
+**終端機表格**（`bash scripts/run_stage.sh status`，完整內容見 [examples/geofence_pad/flow_table.txt](examples/geofence_pad/flow_table.txt)）：
+
+```
+┌──────────────────────────────────────────────┬─────────────┬──────────────────────────────────────────┬──────────┐
+│ Stage (steps)                                │ Status      │ Key numbers                              │ Time     │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ PAD_planning (pad_wrapper, pad_delay_model)  │ PASS        │ pads 24, in 0.42/0.34, out 1.23/1.36 ns  │ 0:00     │
+│ RTL_coding (vcs_simulation)                  │ PASS        │                                          │ 0:02     │
+│ Synthesis (design_compiler_synthesis)        │ PASS        │ area 6013.8, setup +8.589 ns             │ 0:13     │
+│ ...                                          │             │                                          │          │
+│ DRC (icv_drc)                                │ PAD_LIMITED │ core 0, io_ring 2120, stitch 4           │ 3:37 x3  │
+│ LVS (icv_lvs_transistor)                     │ PAD_LIMITED │ MOS 25,640, RES 8 matched                │ 0:23 x2  │
+│ STA_postroute (primetime_spef)               │ PASS        │ setup +22.877 / hold +0.016 ns           │ 0:19 x2  │
+│ Gate_post (vcs_postroute_sdf)                │ PASS        │ SDF $removal warn 17/17                  │ 0:07     │
+└──────────────────────────────────────────────┴─────────────┴──────────────────────────────────────────┴──────────┘
+```
+
+**自己打開看**（clone 之後）：
+
+```bash
+firefox examples/geofence_pad/runs/dashboard.html          # 瀏覽器儀表板
+python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/geofence_core --text   # 終端機表格
+```
+
+裝了 plugin 的話，在 Claude Code 輸入 `/ic_flow <repo 路徑>/examples/geofence_pad` 就能在面板上看。點任一階段可以看說明、通過標準、產出、log 結果行和該階段的動畫。
+
 ## 需求與注意事項
 
 - **工具**：Synopsys VCS、Design Compiler、Formality、PrimeTime、IC Compiler II、IC Validator、StarRC（需自行取得授權），以及 Python 3。腳本預設用 `source /.bash_EDA` 載入工具環境，請依你的機器修改 `run_stage.sh`。
@@ -76,6 +117,8 @@ cp -r IC_flow_skill/skills/digital-ic-flow ~/.claude/skills/
 .claude-plugin/          plugin 與 marketplace 設定
 hooks/                   /ic_flow 面板（register.tsx、anim.ts、測試）
 types/                   面板的狀態型別
+examples/                demo 專案（geofence 無 PAD／有 PAD），可直接看儀表板
+docs/                    README 用的截圖
 skills/digital-ic-flow/
   SKILL.md               skill 本體：流程總覽、使用規則
   references/            flow_stages.md（每階段原理）、pitfalls.md（踩過的坑）、glossary.md（縮寫對照）

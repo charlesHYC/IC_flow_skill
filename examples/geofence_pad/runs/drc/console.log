@@ -1,0 +1,3 @@
+NOT EXECUTED rules: 1
+DRC_CLASSIFY io_ring=2120 (CO.S.3 M2.S.1 M2.S.2 M2.S.3.1 M9.W.2 PO.S.3 PO.W.2 PO.W.4 VIA1.W) stitch=4 (M5.S.3.3) core=0 ()
+DRC_PAD_LIMITED: core clean; remaining errors are IO library GDS + PAD-side PG stitch (LEF/GDS mismatch)

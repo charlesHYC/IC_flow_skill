@@ -1,0 +1,82 @@
+PAD_DELAY D4I1025_NS DIN->PADIO rise/fall = 1.231/1.365 ns (load 1000 fF)
+PAD_PASS
+pad PASS
+ALL PASS
+rtl_sim PASS
+synthesis PASS
+formality PASS
+STA PASS
+gate fast min PASS
+GATE_SIM_PASS
+gate_sim PASS
+ndm PASS
+apr PASS
+eco PASS
+finish PASS
+DRC_CLASSIFY io_ring=2120 (CO.S.3 M2.S.1 M2.S.2 M2.S.3.1 M9.W.2 PO.S.3 PO.W.2 PO.W.4 VIA1.W) stitch=4 (M5.S.3.3) core=4 (M1.W.2.1)
+DRC FAIL: errors inside core / PAD-to-core area, see drc_classified.rpt
+FAIL: marker 'DRC_PASS\|DRC_PAD_LIMITED' not found in drc
+drc_patch PASS
+finish PASS
+DRC_CLASSIFY io_ring=2120 (CO.S.3 M2.S.1 M2.S.2 M2.S.3.1 M9.W.2 PO.S.3 PO.W.2 PO.W.4 VIA1.W) stitch=4 (M5.S.3.3) core=0 ()
+DRC_PAD_LIMITED: core clean; remaining errors are IO library GDS + PAD-side PG stitch (LEF/GDS mismatch)
+NOTE: PG nets ['VDD', 'VDDIO', 'VSS', 'VSSIO'] appear in the same connection-error group (possible PG short in layout)
+LVS_PAD_LIMITED: all MOS/RES matched; mismatches only inside PAD cells / on PG nets and chip ports
+SPEF fast OK
+STARRC_PASS
+starrc PASS
+POST STA FAIL slow
+POST STA FAIL typical
+signoff_eco PASS
+finish PASS
+DRC_CLASSIFY io_ring=2120 (CO.S.3 M2.S.1 M2.S.2 M2.S.3.1 M9.W.2 PO.S.3 PO.W.2 PO.W.4 VIA1.W) stitch=4 (M5.S.3.3) core=0 ()
+DRC_PAD_LIMITED: core clean; remaining errors are IO library GDS + PAD-side PG stitch (LEF/GDS mismatch)
+NOTE: PG nets ['VDD', 'VDDIO', 'VSS', 'VSSIO'] appear in the same connection-error group (possible PG short in layout)
+LVS_PAD_LIMITED: all MOS/RES matched; mismatches only inside PAD cells / on PG nets and chip ports
+SPEF fast OK
+STARRC_PASS
+starrc PASS
+POST STA PASS
+SIGNOFF CLOSED after 1 signoff_eco loop(s)
+fm_post PASS
+gate fast min PASS
+GATE_SIM_PASS
+gate_post PASS
+ALL_STAGES_DONE_PAD_LIMITED
+DRC_CLASSIFY io_ring=2120 (CO.S.3 M2.S.1 M2.S.2 M2.S.3.1 M9.W.2 PO.S.3 PO.W.2 PO.W.4 VIA1.W) stitch=4 (M5.S.3.3) core=0 ()
+DRC_PAD_LIMITED: core clean; remaining errors are IO library GDS + PAD-side PG stitch (LEF/GDS mismatch)
+LVS_PAD_LIMITED: all MOS/RES matched; mismatches only inside PAD cells / on PG nets and chip ports
+DC_SLACK setup=8.58896 cell_area=6013.809568
+STA_SLACK fast setup=8.588961 hold=0.037912
+STA_SLACK slow setup=24.171099 hold=0.138295
+STA_SLACK typical setup=24.965359 hold=0.083925
+POSTROUTE_SLACK fast setup=26.724216 hold=0.015931
+POSTROUTE_SLACK slow setup=22.877283 hold=0.073414
+POSTROUTE_SLACK typical setup=25.944595 hold=0.071530
+ECO buffer u_core/u_geofence_core/sub_138/U2_6/S -> NBUFFX4_RVT (load 15.33 fF)
+ECO buffer u_core/u_geofence_core/sub_139/U2_3/S -> NBUFFX4_RVT (load 14.37 fF)
+ECO buffer u_core/u_geofence_core/sub_138/U2_5/S -> NBUFFX4_RVT (load 13.80 fF)
+ECO buffer u_core/u_geofence_core/sub_141/U2_3/S -> NBUFFX4_RVT (load 13.79 fF)
+ECO buffer u_core/u_geofence_core/sub_140/U2_4/S -> NBUFFX4_RVT (load 12.87 fF)
+ECO buffer u_core/u_geofence_core/edge_index_q_regx0x/Q -> NBUFFX4_RVT (load 8.01 fF)
+ECO inserted 6 buffers
+DRC_PATCH: 4 M1 error boxes
+PATCH M1.W.2.1 u_core/u_geofence_core/vertex_y_q_regx2xx0x/CLK net=u_core/u_geofence_core/clk box={{357.425 430.04} {357.607 430.192}}
+PATCH M1.W.2.1 u_core/u_geofence_core/vertex_x_q_regx5xx1x/CLK net=u_core/u_geofence_core/clk box={{358.793 399.944} {358.975 400.096}}
+PATCH M1.W.2.1 u_core/u_geofence_core/U398/A1 net=u_core/u_geofence_core/state_q[0] box={{398.863 370.953} {399.031 371.123}}
+PATCH M1.W.2.1 u_core/u_geofence_core/ctmTdsLR_1_1720/A1 net=u_core/u_geofence_core/cross_product[1] box={{461.697 411.081} {461.865 411.251}}
+DRC_PATCH: patched 4 / 4
+SIZE u_core/u_geofence_core/vertex_y_q_regx4xx3x DFFX1_RVT -> DFFX2_RVT
+SIZE u_core/u_geofence_core/vertex_x_q_regx0xx5x DFFX1_RVT -> DFFX2_RVT
+SIZE u_core/u_geofence_core/vertex_x_q_regx4xx5x DFFX1_RVT -> DFFX2_RVT
+SIZE u_core/u_geofence_core/ctmTdsLR_1_1640 NAND2X0_RVT -> NAND2X2_RVT
+SIZE u_core/u_geofence_core/U269 INVX0_RVT -> INVX2_RVT
+BUFFER u_core/u_geofence_core/ctmTdsLR_1_1645/Y (AO221X2_RVT has no larger size)
+SIZE u_core/u_geofence_core/U268 INVX0_RVT -> INVX2_RVT
+SIZE u_core/u_geofence_core/ctmTdsLR_1_1507 INVX0_RVT -> INVX2_RVT
+SIZE u_core/u_geofence_core/U234 INVX0_RVT -> INVX2_RVT
+SIZE u_core/u_geofence_core/U200 INVX0_RVT -> INVX2_RVT
+SIZE u_core/u_geofence_core/vertex_x_q_regx4xx7x DFFX1_RVT -> DFFX2_RVT
+SIZE u_core/u_geofence_core/U277 INVX0_RVT -> INVX2_RVT
+PG_FIX VDD: 6 floating rails, adding stacked vias
+PG_FIX VSS: 1 floating rails, adding stacked vias

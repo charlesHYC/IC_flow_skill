@@ -1,0 +1,39 @@
+INFO:: begin filler insertions...
+CHF::NPL_CHKQUERY_PNET checking turned off by default
+CHF: Multi-threading turned off because variant design not supported.
+PDC app_options settings =========
+CHF: loading design...
+CHF:: Loading blkInsts from NDM...
+CHF:: Building row/inst relations...
+INFO:: Use fillers in order(1000): SHFILL128_RVT (128 x 1), SHFILL64_RVT (64 x 1), SHFILL3_RVT (3 x 1), SHFILL2_RVT (2 x 1), SHFILL1_RVT (1 x 1),
+CHF:: Create all new fillers...
+NEX: extract design geofence
+NEX: write corner ID 0 parasitics to estimated_slow.rc_Cmax_125.spef
+NEX:Warning write_parasitics supports only Ohm and kOhm as user resistance unit not 1MOhm, we force to set it Ohm.Information: SPEF output -mt with 4 threads (NEX-014)
+NEX: write_parasitics command finished
+NEX: extract design geofence
+NEX: write corner ID 1 parasitics to estimated_typical.rc_nominal_25.spef
+NEX:Warning write_parasitics supports only Ohm and kOhm as user resistance unit not 1MOhm, we force to set it Ohm.Information: SPEF output -mt with 4 threads (NEX-014)
+NEX: write_parasitics command finished
+NEX: extract design geofence
+NEX: write corner ID 2 parasitics to estimated_fast.rc_Cmin_-40.spef
+NEX:Warning write_parasitics supports only Ohm and kOhm as user resistance unit not 1MOhm, we force to set it Ohm.Information: SPEF output -mt with 4 threads (NEX-014)
+NEX: write_parasitics command finished
+VERSION                        : 1
+DIVIDERCHAR                    : 1
+BUSBITCHARS                    : 1
+DESIGN                         : 1
+UNITS                          : 1
+PROPERTYDEFINITIONS            : 1
+DIEAREA                        : 1
+ROW                            : 119
+TRACKS                         : 20
+VIAS                           : 11
+NONDEFAULTRULES                : 1
+COMPONENTS                     : 9486
+PINS                           : 26
+PINPROPERTIES                  : 24
+SPECIALNETS                    : 1641
+NETS                           : 2579
+FINISH_PASS
+CPU usage for this session:     17 seconds (  0.00 hours)

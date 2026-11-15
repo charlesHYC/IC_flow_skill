@@ -1,0 +1,7 @@
+PAD_SIMNET wrote chip_sim.v
+SDF_NOTE slow: removal-check warnings=17
+gate slow max PASS
+PAD_SIMNET wrote chip_sim.v
+SDF_NOTE fast: removal-check warnings=17
+gate fast min PASS
+GATE_SIM_PASS

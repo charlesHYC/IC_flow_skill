@@ -1,0 +1,2 @@
+NOTE: PG nets ['VDD', 'VDDIO', 'VSS', 'VSSIO'] appear in the same connection-error group (possible PG short in layout)
+LVS_PAD_LIMITED: all MOS/RES matched; mismatches only inside PAD cells / on PG nets and chip ports

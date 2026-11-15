@@ -1,0 +1,9 @@
+M1.*
+DRC_PATCH: 4 M1 error boxes
+PATCH M1.W.2.1 u_core/u_geofence_core/vertex_y_q_regx2xx0x/CLK net=u_core/u_geofence_core/clk box={{357.425 430.04} {357.607 430.192}}
+PATCH M1.W.2.1 u_core/u_geofence_core/vertex_x_q_regx5xx1x/CLK net=u_core/u_geofence_core/clk box={{358.793 399.944} {358.975 400.096}}
+PATCH M1.W.2.1 u_core/u_geofence_core/U398/A1 net=u_core/u_geofence_core/state_q[0] box={{398.863 370.953} {399.031 371.123}}
+PATCH M1.W.2.1 u_core/u_geofence_core/ctmTdsLR_1_1720/A1 net=u_core/u_geofence_core/cross_product[1] box={{461.697 411.081} {461.865 411.251}}
+DRC_PATCH: patched 4 / 4
+DRC_PATCH_PASS
+CPU usage for this session:      9 seconds (  0.00 hours)

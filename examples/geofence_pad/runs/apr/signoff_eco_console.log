@@ -1,0 +1,47 @@
+NBUFFX8_RVT
+SIGNOFF_ECO: 12 violating pins from 3 PT reports
+SIZE u_core/u_geofence_core/vertex_y_q_regx4xx3x DFFX1_RVT -> DFFX2_RVT
+SIZE u_core/u_geofence_core/vertex_x_q_regx0xx5x DFFX1_RVT -> DFFX2_RVT
+SIZE u_core/u_geofence_core/vertex_x_q_regx4xx5x DFFX1_RVT -> DFFX2_RVT
+SIZE u_core/u_geofence_core/ctmTdsLR_1_1640 NAND2X0_RVT -> NAND2X2_RVT
+SIZE u_core/u_geofence_core/U269 INVX0_RVT -> INVX2_RVT
+BUFFER u_core/u_geofence_core/ctmTdsLR_1_1645/Y (AO221X2_RVT has no larger size)
+SIZE u_core/u_geofence_core/U268 INVX0_RVT -> INVX2_RVT
+SIZE u_core/u_geofence_core/ctmTdsLR_1_1507 INVX0_RVT -> INVX2_RVT
+SIZE u_core/u_geofence_core/U234 INVX0_RVT -> INVX2_RVT
+SIZE u_core/u_geofence_core/U200 INVX0_RVT -> INVX2_RVT
+SIZE u_core/u_geofence_core/vertex_x_q_regx4xx7x DFFX1_RVT -> DFFX2_RVT
+SIZE u_core/u_geofence_core/U277 INVX0_RVT -> INVX2_RVT
+PDC app_options settings =========
+VIOLATIONS BY CATEGORY:
+TOTAL 7 Violations.
+VIOLATIONS BY SUBCATEGORY:
+PDC app_options settings =========
+INFO: wire-opt feature for router enabled
+NEX(Warning): extract.rc_techfile_for_diode_mode_26_thickness not set, will igonre it
+VIA LADDER INFO: found 0 via ladder DRCs across 0 nets.
+HPWL   0 ~   50 microns: Net Count       12	Total HPWL          348 microns
+HPWL  50 ~  100 microns: Net Count        2	Total HPWL          128 microns
+HPWL 100 ~  200 microns: Net Count        0	Total HPWL            0 microns
+HPWL 200 ~  300 microns: Net Count        0	Total HPWL            0 microns
+HPWL 300 ~  400 microns: Net Count        0	Total HPWL            0 microns
+HPWL 400 ~  500 microns: Net Count        0	Total HPWL            0 microns
+HPWL 500 ~  600 microns: Net Count        0	Total HPWL            0 microns
+HPWL 600 ~  700 microns: Net Count        0	Total HPWL            0 microns
+HPWL 700 ~  800 microns: Net Count        0	Total HPWL            0 microns
+HPWL 800 ~  900 microns: Net Count        0	Total HPWL            0 microns
+HPWL 900 ~ 1000 microns: Net Count        0	Total HPWL            0 microns
+HPWL     > 1000 microns: Net Count        0	Total HPWL            0 microns
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO Route finished with 0 open nets, of which 0 are frozen
+ECO Route finished with 0 violations
+DRC-SUMMARY:
+INFO: wire-opt feature for router enabled
+DR finished with 0 open nets, of which 0 are frozen
+DR finished with 0 violations
+DRC-SUMMARY:
+SIGNOFF_ECO: changed 12 cells
+SIGNOFF_ECO_PASS
+CPU usage for this session:     18 seconds (  0.00 hours)

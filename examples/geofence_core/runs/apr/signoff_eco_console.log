@@ -1,0 +1,44 @@
+NBUFFX8_RVT
+SIGNOFF_ECO: 9 violating pins from 3 PT reports
+SIZE u_geofence_core/vertex_y_q_regx1xx1x DFFX1_RVT -> DFFX2_RVT
+SIZE u_geofence_core/HFSINV_1883_72 INVX4_RVT -> INVX8_RVT
+SIZE u_geofence_core/vertex_x_q_regx1xx3x DFFX1_RVT -> DFFX2_RVT
+SIZE u_geofence_core/vertex_x_q_regx1xx2x DFFX1_RVT -> DFFX2_RVT
+SIZE u_geofence_core/U535 INVX0_RVT -> INVX2_RVT
+SIZE u_geofence_core/vertex_y_q_regx1xx3x DFFX1_RVT -> DFFX2_RVT
+SIZE u_geofence_core/U666 INVX2_RVT -> INVX4_RVT
+SIZE u_geofence_core/U754 INVX0_RVT -> INVX2_RVT
+SIZE u_geofence_core/HFSINV_68_65 INVX4_RVT -> INVX8_RVT
+PDC app_options settings =========
+VIOLATIONS BY CATEGORY:
+TOTAL 3 Violations.
+VIOLATIONS BY SUBCATEGORY:
+PDC app_options settings =========
+INFO: wire-opt feature for router enabled
+NEX(Warning): extract.rc_techfile_for_diode_mode_26_thickness not set, will igonre it
+VIA LADDER INFO: found 0 via ladder DRCs across 0 nets.
+HPWL   0 ~   50 microns: Net Count        8	Total HPWL          182 microns
+HPWL  50 ~  100 microns: Net Count        3	Total HPWL          177 microns
+HPWL 100 ~  200 microns: Net Count        0	Total HPWL            0 microns
+HPWL 200 ~  300 microns: Net Count        0	Total HPWL            0 microns
+HPWL 300 ~  400 microns: Net Count        0	Total HPWL            0 microns
+HPWL 400 ~  500 microns: Net Count        0	Total HPWL            0 microns
+HPWL 500 ~  600 microns: Net Count        0	Total HPWL            0 microns
+HPWL 600 ~  700 microns: Net Count        0	Total HPWL            0 microns
+HPWL 700 ~  800 microns: Net Count        0	Total HPWL            0 microns
+HPWL 800 ~  900 microns: Net Count        0	Total HPWL            0 microns
+HPWL 900 ~ 1000 microns: Net Count        0	Total HPWL            0 microns
+HPWL     > 1000 microns: Net Count        0	Total HPWL            0 microns
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO Route finished with 0 open nets, of which 0 are frozen
+ECO Route finished with 0 violations
+DRC-SUMMARY:
+INFO: wire-opt feature for router enabled
+DR finished with 0 open nets, of which 0 are frozen
+DR finished with 0 violations
+DRC-SUMMARY:
+SIGNOFF_ECO: changed 9 cells
+SIGNOFF_ECO_PASS
+CPU usage for this session:     15 seconds (  0.00 hours)

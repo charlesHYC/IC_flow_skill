@@ -1,0 +1,618 @@
+M2
+M6
+CPU Time for load db: 00:00:00.00u 00:00:00.00s 00:00:00.00e:
+CPU Time for Top Level Pre-Route Processing: 00:00:00.00u 00:00:00.00s 00:00:00.00e:
+CPU Time for Leaf Level Pre-Route Processing: 00:00:00.00u 00:00:00.00s 00:00:00.00e:
+CPU Time for Pin Preparation: 00:00:00.00u 00:00:00.00s 00:00:00.00e:
+CPU Time for Pin Creation: 00:00:00.01u 00:00:00.00s 00:00:00.01e:
+DRC checking and fixing for standard cell rail strategy rail_s.
+PG_FIX VDD: 5 floating rails, adding stacked vias
+LLE:                                       disabled
+ML Acceleration:                           off
+INFO: debug level = 0
+INFO: max fanout = 999
+INFO: max diameter (in user unit) = 33.44
+INFO: Available logic one lib cells:
+INFO: Available logic zero lib cells:
+INFO: place_opt is running in balanced flow mode
+INFO: Total Power Aware Optimization Enabled (Dynamic + Leakage)
+INFO: disable CRPR-based timing.
+INFO: Running power improvement flow (1)
+INFO: place_opt is running with flow.common.io_priority high.
+CTS related app options set by user:
+INFO: sweep stats: 0 gates / 0 nets gobbled, 0 gates (0 seq) simplified
+PDM initilization successfull...
+PDM uninitilization successfull...
+CGRW: permuting timing equivalent pins only
+CGRW: importing permutable pins & pairs, size 8 and above
+DTDP placement: scenario=functional_slow
+INFO: creating 29(r) x 29(c) GridCells YDim 8.36 XDim 8.36
+INFO: number of GridCells (geofence): 841
+INFO: creating 29(r) x 29(c) GridCells YDim 8.36 XDim 8.36
+INFO: number of GridCells (geofence): 841
+APSINFO: No multi-Vth libcells found, turning off percentage LVT optimization flow
+APS-CHARZ: Performing leakage analysis
+INFO: sweep stats: 0 gates / 19 nets gobbled, 0 gates (0 seq) simplified
+GRE layer bins: None, M2
+TSI: added 0 repeaters
+INFO: sweep stats: 0 gates / 0 nets gobbled, 0 gates (0 seq) simplified
+INFO: Start environment monitoring: UCF
+INFO: place_opt is running in balanced flow mode.
+INFO: EIO v6 - EPO v3 - Cost Function Configuration 0.5/0.5/0.5/0.5
+INFO: Start environment monitoring: recipes
+INFO: place_opt is running in balanced flow mode.
+INFO: EIO v6 - EPO v3 - Cost Function Configuration 0.5/0.5/0.5/0.5
+INFO: place_opt is running in balanced flow mode
+INFO: Leakage Power Aware Optimization Enabled
+INFO: compile_fusion is running with flow.common.io_priority high.
+INFO: disable CRPR-based timing.
+LLE:                                       disabled
+ML Acceleration:                           off
+INFO: using 4 threads
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: wire-opt feature for router enabled
+NEX(Warning): extract.rc_techfile_for_diode_mode_26_thickness not set, will igonre it
+HPWL   0 ~   50 microns: Net Count     1866	Total HPWL        22812 microns
+HPWL  50 ~  100 microns: Net Count      147	Total HPWL         9374 microns
+HPWL 100 ~  200 microns: Net Count       15	Total HPWL         1848 microns
+HPWL 200 ~  300 microns: Net Count        1	Total HPWL          207 microns
+HPWL 300 ~  400 microns: Net Count        0	Total HPWL            0 microns
+HPWL 400 ~  500 microns: Net Count        0	Total HPWL            0 microns
+HPWL 500 ~  600 microns: Net Count        0	Total HPWL            0 microns
+HPWL 600 ~  700 microns: Net Count        0	Total HPWL            0 microns
+HPWL 700 ~  800 microns: Net Count        0	Total HPWL            0 microns
+HPWL 800 ~  900 microns: Net Count        0	Total HPWL            0 microns
+HPWL 900 ~ 1000 microns: Net Count        0	Total HPWL            0 microns
+HPWL     > 1000 microns: Net Count        0	Total HPWL            0 microns
+INFO: Skipping activation of hold scenarios prior to CUS.
+CCD app option: ccd.targeted_ccd_path_groups:  **clock_gating_default**
+INFO: Skipping deactivation of hold scenarios after CUS.
+DB units per micron : 10000
+INFO: Skipping activation of hold scenarios prior to CUS.
+CCD app option: ccd.targeted_ccd_path_groups:  **clock_gating_default**
+INFO: Skipping deactivation of hold scenarios after CUS.
+INFO: cellmap features:  adv-rules=(N), pdc=(N), clock-rules=(Y)
+INFO: cellmap features:  adv-rules=(N), pdc=(N), clock-rules=(Y)
+DB units per micron : 10000
+INFO: cellmap features:  adv-rules=(N), pdc=(N), clock-rules=(Y)
+INFO: cellmap features:  adv-rules=(N), pdc=(N), clock-rules=(Y)
+ISR-INFO: dsizeFilter CandPruners: dSizeVTGroupCandPruner dSizeFootprintCandPruner dSizeOrigVariantCandPruner
+ISR-INFO: dsizeFilter ResultPruners: tpo_cost_rp delay_scale_rp arn_tran_rp mog_mcmm_delay_rp
+LAO is disable, refresh para
+DB units per micron : 10000
+INFO:  SEQ DEL WNS is protecting TNS
+INFO:  SEQ DEL WNS is protecting TNS
+INFO: cellmap features:  adv-rules=(N), pdc=(N), clock-rules=(Y)
+DB units per micron : 10000
+INFO: Restore MV PD Boundary Restriction
+PATHGROUP QOR
+SCENARIO QOR
+DESIGN QOR
+UPF is NOT loaded.
+UPF is NOT committed.
+INFO: End environment monitoring: recipes
+INFO: Restored 0 timer status, 13 app options, 0 tcl gvars, 0 env vars
+INFO: End environment monitoring: UCF
+INFO: Restored 0 timer status, 194 app options, 0 tcl gvars, 0 env vars
+INFO: place_opt is running in balanced flow mode
+INFO: Total Power Aware Optimization Enabled (Dynamic + Leakage)
+INFO: disable CRPR-based timing.
+INFO: Running power improvement flow (1)
+INFO: place_opt is running with flow.common.io_priority high.
+INFO: creating 29(r) x 29(c) GridCells YDim 8.36 XDim 8.36
+INFO: number of GridCells (geofence): 841
+INFO: creating 29(r) x 29(c) GridCells YDim 8.36 XDim 8.36
+INFO: number of GridCells (geofence): 841
+INFO: wire-opt feature for router enabled
+HPWL   0 ~   50 microns: Net Count     1807	Total HPWL        22079 microns
+HPWL  50 ~  100 microns: Net Count      148	Total HPWL         9414 microns
+HPWL 100 ~  200 microns: Net Count       16	Total HPWL         1939 microns
+HPWL 200 ~  300 microns: Net Count        1	Total HPWL          207 microns
+HPWL 300 ~  400 microns: Net Count        0	Total HPWL            0 microns
+HPWL 400 ~  500 microns: Net Count        0	Total HPWL            0 microns
+HPWL 500 ~  600 microns: Net Count        0	Total HPWL            0 microns
+HPWL 600 ~  700 microns: Net Count        0	Total HPWL            0 microns
+HPWL 700 ~  800 microns: Net Count        0	Total HPWL            0 microns
+HPWL 800 ~  900 microns: Net Count        0	Total HPWL            0 microns
+HPWL 900 ~ 1000 microns: Net Count        0	Total HPWL            0 microns
+HPWL     > 1000 microns: Net Count        0	Total HPWL            0 microns
+DTDP placement: scenario=functional_slow
+INFO: creating 29(r) x 29(c) GridCells YDim 8.36 XDim 8.36
+INFO: number of GridCells (geofence): 841
+INFO: creating 29(r) x 29(c) GridCells YDim 8.36 XDim 8.36
+INFO: number of GridCells (geofence): 841
+PDC app_options settings =========
+INFO: sweep stats: 0 gates / 0 nets gobbled, 0 gates (0 seq) simplified
+INFO: Start environment monitoring: UCF
+INFO: place_opt is running in balanced flow mode.
+INFO: EIO v6 - EPO v3 - Cost Function Configuration 0.5/0.5/0.5/0.5
+INFO: Start environment monitoring: recipes
+INFO: place_opt is running in balanced flow mode.
+INFO: EIO v6 - EPO v3 - Cost Function Configuration 0.5/0.5/0.5/0.5
+INFO: place_opt is running in balanced flow mode
+INFO: Leakage Power Aware Optimization Enabled
+INFO: compile_fusion is running with flow.common.io_priority high.
+INFO: disable CRPR-based timing.
+PATHGROUP QOR
+SCENARIO QOR
+DESIGN QOR
+INFO: using 4 threads
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+DB units per micron : 10000
+INFO: Restore MV PD Boundary Restriction
+INFO: Skipping activation of hold scenarios prior to CUS.
+CCD app option: ccd.targeted_ccd_path_groups:  **clock_gating_default**
+INFO: Skipping deactivation of hold scenarios after CUS.
+INFO: Skipping activation of hold scenarios prior to CUS.
+CCD app option: ccd.targeted_ccd_path_groups:  **clock_gating_default**
+INFO: Skipping deactivation of hold scenarios after CUS.
+DB units per micron : 10000
+INFO: cellmap features:  adv-rules=(N), pdc=(N), clock-rules=(Y)
+INFO: cellmap features:  adv-rules=(N), pdc=(N), clock-rules=(Y)
+INFO: cellmap features:  adv-rules=(N), pdc=(N), clock-rules=(Y)
+ISR-INFO: dsizeFilter CandPruners: dSizeVTGroupCandPruner dSizeFootprintCandPruner dSizeOrigVariantCandPruner
+ISR-INFO: dsizeFilter ResultPruners: tpo_cost_rp delay_scale_rp arn_tran_rp mog_mcmm_delay_rp
+INFO:  SEQ DEL WNS is protecting TNS
+INFO:  SEQ DEL WNS is protecting TNS
+INFO: cellmap features:  adv-rules=(N), pdc=(N), clock-rules=(Y)
+PDC app_options settings =========
+INFO: Enabled CLO at stage after_LGL3.
+INFO: place.legalize.enable_advanced_legalizer not set - need to revert CLO
+INFO: First Place-opt did not mark run with CLO enabled/disabled property
+INFO: Concurrent Legalization and Optimization (CLO) Reverted
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+DB units per micron : 10000
+INFO: Restore MV PD Boundary Restriction
+DB units per micron : 10000
+DB units per micron : 10000
+INFO: Restore MV PD Boundary Restriction
+PDC app_options settings =========
+INFO: Enabled CLO at stage after_LGL4.
+INFO: place.legalize.enable_advanced_legalizer not set - need to revert CLO
+INFO: First Place-opt did not mark run with CLO enabled/disabled property
+INFO: Concurrent Legalization and Optimization (CLO) Reverted
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: Running FTB cleanup in end of npo flow.
+PATHGROUP QOR
+SCENARIO QOR
+DESIGN QOR
+INFO: End environment monitoring: recipes
+INFO: Restored 0 timer status, 13 app options, 0 tcl gvars, 0 env vars
+INFO: End environment monitoring: UCF
+INFO: Restored 0 timer status, 198 app options, 0 tcl gvars, 0 env vars
+INFO: Running medium effort clock_opt flow.
+INFO: clock_opt is running in balanced flow mode.
+INFO: Total Power Aware Optimization Enabled (Dynamic + Leakage)
+INFO: clock_opt is running with flow.common.io_priority high.
+INFO: run stage build_clock (init -> end)
+CTS related app options set by user:
+ICG reference list:
+PDC app_options settings =========
+INFO: creating 29(r) x 29(c) GridCells YDim 8.36 XDim 8.36
+INFO: number of GridCells (geofence): 841
+INFO: creating 29(r) x 29(c) GridCells YDim 8.36 XDim 8.36
+INFO: number of GridCells (geofence): 841
+DB units per micron : 10000
+INFO: wire-opt feature for router enabled
+CTO: setting route_reuse..
+CTSSC route status detected: clock (VR 0, GR 335, DR 0), data (VR 1956, GR 0, DR 0); stage = auto, isPostRoute = FALSE
+INFO: wire-opt feature for router enabled
+GR Routing Service: Started IMRD
+GR Routing Service: ndmAttrDef 'usr_tmng_crit' created with default value 0
+GR Routing Service: ndmAttrDef 'rted_by_minDly' created with default value 0
+GR Routing Service: ndmAttrDef 'port_subnet_crit_blkConn' created with default value 0
+GR Routing Service: ndmAttrDef 'port_subnet_crit_blkPort' created with default value 0
+GR Routing Service: Setting costIdx to 3
+GR Routing Service: rebuildCongmap: itr = 3
+GR Routing Service: Setting costIdx to 1
+HARNESS Summary:
+CCD MOO settings for (cto1, last_qor_strategy): 4 engines
+DBG: ccdInfra::ccdInfra
+CCD blasted path groups
+DBG: ccdInfra::initAppOptions
+DBG: ccdInfra::initCtsFixedBalancePins
+CCD-Info: App options set by user
+CCD: using 4 threads
+CTSSC route status detected: clock (VR 0, GR 345, DR 0), data (VR 1956, GR 0, DR 0); stage = auto, isPostRoute = FALSE
+CCD: Initial QOR:
+CCD-QoR: Timing: WNS = 24.280, TNS = 0.000, NVP = 0, UNWEIGHTED_TNS = 0.000, WNHS = -0.026, TNHS = -0.077, NHVP = 3, UNWEIGHTED_TNHS = -0.077, R2R(wns=24.280224, tns=0.000000, nvp=0)
+CCD: After FMAX optimization:cto1_HOLD_TNS1
+CCD-QoR: Timing: WNS = 24.280, TNS = 0.000, NVP = 0, UNWEIGHTED_TNS = 0.000, WNHS = -0.026, TNHS = -0.077, NHVP = 3, UNWEIGHTED_TNHS = -0.077, R2R(wns=24.280224, tns=0.000000, nvp=0)
+CCD: After FMAX optimization:cto1_NONE_POWER3
+CCD-QoR: Timing: WNS = 24.284, TNS = 0.000, NVP = 0, UNWEIGHTED_TNS = 0.000, WNHS = -0.025, TNHS = -0.076, NHVP = 3, UNWEIGHTED_TNHS = -0.076, R2R(wns=24.283667, tns=0.000000, nvp=0)
+CCD unblasted path groups
+GR Routing Service: Wrote GR congmap to NDM
+INFO: wire-opt feature for router enabled
+HPWL   0 ~   50 microns: Net Count        1	Total HPWL           42 microns
+HPWL  50 ~  100 microns: Net Count        2	Total HPWL          119 microns
+HPWL 100 ~  200 microns: Net Count        0	Total HPWL            0 microns
+HPWL 200 ~  300 microns: Net Count        0	Total HPWL            0 microns
+HPWL 300 ~  400 microns: Net Count        0	Total HPWL            0 microns
+HPWL 400 ~  500 microns: Net Count        0	Total HPWL            0 microns
+HPWL 500 ~  600 microns: Net Count        0	Total HPWL            0 microns
+HPWL 600 ~  700 microns: Net Count        0	Total HPWL            0 microns
+HPWL 700 ~  800 microns: Net Count        0	Total HPWL            0 microns
+HPWL 800 ~  900 microns: Net Count        0	Total HPWL            0 microns
+HPWL 900 ~ 1000 microns: Net Count        0	Total HPWL            0 microns
+HPWL     > 1000 microns: Net Count        0	Total HPWL            0 microns
+CTS-038    1  Warning  No clock routing rule is specified.
+INFO: Propagating Switching Activities
+INFO: Switching Activity propagation took     0.00001 sec
+INFO: Propagating Switching Activity for all power flows
+PATHGROUP QOR
+SCENARIO QOR
+DESIGN QOR
+INFO: using 4 threads
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+APSINFO: No multi-Vth libcells found, turning off percentage LVT optimization flow
+DB units per micron : 10000
+DB units per micron : 10000
+CTS related app options set by user:
+ICG reference list:
+PDC app_options settings =========
+INFO: creating 29(r) x 29(c) GridCells YDim 8.36 XDim 8.36
+INFO: number of GridCells (geofence): 841
+INFO: creating 29(r) x 29(c) GridCells YDim 8.36 XDim 8.36
+INFO: number of GridCells (geofence): 841
+CTS checksum info: ctsSch::runFinalCtsInitDesign end
+CTS: Design checksums = 0xB327D8E0 (loc)  0x6F76E21A (lcell)  0xFA855627 (name), 0xD9FC3143 (net)
+CTS: Clock tree checksums = 0x1A75CFD (loc)  0x39F0E0B0 (lcell)  0xACF8FE17 (term), 0xC63820B5 (net)  0x3B4D6FBC (netLen)
+CTS: Placement checksums = 3387be72 (loc) 9a467eda (lcell) fa855627 (name) 954c4b65 (net) a19619cb (graph) 0 (slack) c17dcf7b (para)
+CTSSC route status detected: clock (VR 0, GR 341, DR 0), data (VR 1958, GR 0, DR 0); stage = auto, isPostRoute = FALSE
+INFO: wire-opt feature for router enabled
+GR Routing Service: Started IMRD
+GR Routing Service: ndmAttrDef 'usr_tmng_crit' created with default value 0
+GR Routing Service: ndmAttrDef 'rted_by_minDly' created with default value 0
+GR Routing Service: ndmAttrDef 'port_subnet_crit_blkConn' created with default value 0
+GR Routing Service: ndmAttrDef 'port_subnet_crit_blkPort' created with default value 0
+GR Routing Service: Setting costIdx to 3
+GR Routing Service: rebuildCongmap: itr = 3
+GR Routing Service: Setting costIdx to 1
+HARNESS Summary:
+CCD app option: ccd.targeted_ccd_path_groups:  **clock_gating_default**
+CCD-Info: Adjusting IO clock latencies to improve timing (ccd.adjust_io_clock_latency = true)
+INFO: Clock latencies not changed
+CUS IO adjustment before multi-objective clock optimization did not change IO
+CCD MOO settings for (budget_implementation, last_qor_strategy): 5 engines
+DBG: ccdInfra::ccdInfra
+CCD blasted path groups
+DBG: ccdInfra::initAppOptions
+DBG: ccdInfra::initCtsFixedBalancePins
+CCD-Info: App options set by user
+CCD: using 4 threads
+CTSSC route status detected: clock (VR 0, GR 341, DR 0), data (VR 1958, GR 0, DR 0); stage = auto, isPostRoute = FALSE
+CCD: Initial QOR:
+CCD-QoR: Timing: WNS = 24.242, TNS = 0.000, NVP = 0, UNWEIGHTED_TNS = 0.000, WNHS = -0.025, TNHS = -0.076, NHVP = 3, UNWEIGHTED_TNHS = -0.076, R2R(wns=24.241854, tns=0.000000, nvp=0)
+CCD: After FMAX optimization:budget_implementation_HOLD_TNS3
+CCD-QoR: Timing: WNS = 24.242, TNS = 0.000, NVP = 0, UNWEIGHTED_TNS = 0.000, WNHS = -0.025, TNHS = -0.076, NHVP = 3, UNWEIGHTED_TNHS = -0.076, R2R(wns=24.241854, tns=0.000000, nvp=0)
+CCD unblasted path groups
+GR Routing Service: Wrote GR congmap to NDM
+INFO: wire-opt feature for router enabled
+HPWL   0 ~   50 microns: Net Count        0	Total HPWL            0 microns
+HPWL  50 ~  100 microns: Net Count        0	Total HPWL            0 microns
+HPWL 100 ~  200 microns: Net Count        0	Total HPWL            0 microns
+HPWL 200 ~  300 microns: Net Count        0	Total HPWL            0 microns
+HPWL 300 ~  400 microns: Net Count        0	Total HPWL            0 microns
+HPWL 400 ~  500 microns: Net Count        0	Total HPWL            0 microns
+HPWL 500 ~  600 microns: Net Count        0	Total HPWL            0 microns
+HPWL 600 ~  700 microns: Net Count        0	Total HPWL            0 microns
+HPWL 700 ~  800 microns: Net Count        0	Total HPWL            0 microns
+HPWL 800 ~  900 microns: Net Count        0	Total HPWL            0 microns
+HPWL 900 ~ 1000 microns: Net Count        0	Total HPWL            0 microns
+HPWL     > 1000 microns: Net Count        0	Total HPWL            0 microns
+PDC app_options settings =========
+CTS-038    1  Warning  No clock routing rule is specified.
+INFO: creating 29(r) x 29(c) GridCells YDim 8.36 XDim 8.36
+INFO: number of GridCells (geofence): 841
+INFO: creating 29(r) x 29(c) GridCells YDim 8.36 XDim 8.36
+INFO: number of GridCells (geofence): 841
+PATHGROUP QOR
+SCENARIO QOR
+DESIGN QOR
+INFO: run stage route_clock (init -> end)
+INFO: wire-opt feature for router enabled
+VIA LADDER INFO: found 0 via ladder DRCs across 0 nets.
+GR will route in ATREE-style.
+HPWL   0 ~   50 microns: Net Count        0	Total HPWL            0 microns
+HPWL  50 ~  100 microns: Net Count        0	Total HPWL            0 microns
+HPWL 100 ~  200 microns: Net Count        0	Total HPWL            0 microns
+HPWL 200 ~  300 microns: Net Count        0	Total HPWL            0 microns
+HPWL 300 ~  400 microns: Net Count        0	Total HPWL            0 microns
+HPWL 400 ~  500 microns: Net Count        0	Total HPWL            0 microns
+HPWL 500 ~  600 microns: Net Count        0	Total HPWL            0 microns
+HPWL 600 ~  700 microns: Net Count        0	Total HPWL            0 microns
+HPWL 700 ~  800 microns: Net Count        0	Total HPWL            0 microns
+HPWL 800 ~  900 microns: Net Count        0	Total HPWL            0 microns
+HPWL 900 ~ 1000 microns: Net Count        0	Total HPWL            0 microns
+HPWL     > 1000 microns: Net Count        0	Total HPWL            0 microns
+DRC-SUMMARY:
+DR finished with 0 open nets, of which 0 are frozen
+DR finished with 0 violations
+DRC-SUMMARY:
+INFO: run stage final_opto (init -> end)
+INFO: Removed total 0 routing shapes from 2261 signal nets.
+INFO: Propagating Switching Activities
+INFO: Switching Activity propagation took     0.00001 sec
+INFO: Propagating Switching Activity for all power flows
+PATHGROUP QOR
+SCENARIO QOR
+DESIGN QOR
+INFO: using 4 threads
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+DB units per micron : 10000
+DB units per micron : 10000
+LR XFORM: End Prediction Mode
+ISR-INFO: dsizeFilter CandPruners: dSizeVTGroupCandPruner dSizeFootprintCandPruner dSizeKneeCandPruner
+ISR-INFO: dsizeFilter ResultPruners: tpo_cost_rp delay_scale_rp arn_tran_rp mog_mcmm_delay_rp
+ISR-INFO: dsizeFilter CandPruners: dSizeVTGroupCandPruner dSizeFootprintCandPruner dSizeKneeCandPruner
+ISR-INFO: dsizeFilter ResultPruners: tpo_cost_rp delay_scale_rp arn_tran_rp mog_mcmm_delay_rp
+ISR-INFO: dsizeFilter CandPruners: dSizeVTGroupCandPruner dSizeFootprintCandPruner
+ISR-INFO: dsizeFilter ResultPruners: tpo_cost_rp delay_scale_rp arn_tran_rp mog_mcmm_delay_rp
+DB units per micron : 10000
+DB units per micron : 10000
+INFO: wire-opt feature for router enabled
+HPWL   0 ~   50 microns: Net Count     2445	Total HPWL        23958 microns
+HPWL  50 ~  100 microns: Net Count       92	Total HPWL         6001 microns
+HPWL 100 ~  200 microns: Net Count       15	Total HPWL         1816 microns
+HPWL 200 ~  300 microns: Net Count        0	Total HPWL            0 microns
+HPWL 300 ~  400 microns: Net Count        0	Total HPWL            0 microns
+HPWL 400 ~  500 microns: Net Count        0	Total HPWL            0 microns
+HPWL 500 ~  600 microns: Net Count        0	Total HPWL            0 microns
+HPWL 600 ~  700 microns: Net Count        0	Total HPWL            0 microns
+HPWL 700 ~  800 microns: Net Count        0	Total HPWL            0 microns
+HPWL 800 ~  900 microns: Net Count        0	Total HPWL            0 microns
+HPWL 900 ~ 1000 microns: Net Count        0	Total HPWL            0 microns
+HPWL     > 1000 microns: Net Count        0	Total HPWL            0 microns
+DTDP placement: scenario=functional_fast
+DFT optimization is skipped due to optimize_scan_chain being false
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: Running TieOpt on MG
+PDC app_options settings =========
+INFO: GRE is running with flow.common.io_priority high.
+INFO: place.legalize.enable_advanced_legalizer not set - need to revert CLO
+INFO: First Clock-opt did not mark run with CLO enabled/disabled property
+INFO: Concurrent Legalization and Optimization (CLO) Reverted
+INFO: Propagating Switching Activities
+INFO: Switching Activity propagation took     0.00003 sec
+INFO: Propagating Switching Activity for all power flows
+INFO: place.legalize.enable_advanced_legalizer not set - need to revert CLO
+INFO: First Clock-opt did not mark run with CLO enabled/disabled property
+APS-MCMM: Setup/DRC-only scenario grouping = [0 1 2]
+APS-MCMM: Hold scenario grouping = [0 1 2]
+APS-MCMM: Leakage scenario grouping = [0 1 2]
+APS-MCMM: Dynamic scenario grouping = [0 1 2]
+INFO: place.legalize.enable_advanced_legalizer not set - need to revert CLO
+INFO: First Clock-opt did not mark run with CLO enabled/disabled property
+INFO: Running refresh_performance_via_ladder_constraints
+INFO: Running refresh_via_ladders
+INFO: wire-opt feature for router enabled
+INFO: wire-opt feature for router enabled
+HPWL   0 ~   50 microns: Net Count     2496	Total HPWL        25267 microns
+HPWL  50 ~  100 microns: Net Count      126	Total HPWL         8231 microns
+HPWL 100 ~  200 microns: Net Count       17	Total HPWL         2090 microns
+HPWL 200 ~  300 microns: Net Count        0	Total HPWL            0 microns
+HPWL 300 ~  400 microns: Net Count        0	Total HPWL            0 microns
+HPWL 400 ~  500 microns: Net Count        0	Total HPWL            0 microns
+HPWL 500 ~  600 microns: Net Count        0	Total HPWL            0 microns
+HPWL 600 ~  700 microns: Net Count        0	Total HPWL            0 microns
+HPWL 700 ~  800 microns: Net Count        0	Total HPWL            0 microns
+HPWL 800 ~  900 microns: Net Count        0	Total HPWL            0 microns
+HPWL 900 ~ 1000 microns: Net Count        0	Total HPWL            0 microns
+HPWL     > 1000 microns: Net Count        0	Total HPWL            0 microns
+PATHGROUP QOR
+SCENARIO QOR
+DESIGN QOR
+APS-MCMM: Setup/DRC-only scenario grouping = [0 1 2]
+APS-MCMM: Hold scenario grouping = [0 1 2]
+APS-MCMM: Leakage scenario grouping = [0 1 2]
+APS-MCMM: Dynamic scenario grouping = [0 1 2]
+INFO: wire-opt feature for router enabled
+GR Routing Service: Started IMRD
+GR Routing Service: ndmAttrDef 'usr_tmng_crit' created with default value 0
+GR Routing Service: ndmAttrDef 'rted_by_minDly' created with default value 0
+GR Routing Service: ndmAttrDef 'port_subnet_crit_blkConn' created with default value 0
+GR Routing Service: ndmAttrDef 'port_subnet_crit_blkPort' created with default value 0
+GR Routing Service: Setting costIdx to 3
+GR Routing Service: rebuildCongmap: itr = 3
+GR Routing Service: Setting costIdx to 3
+GR Routing Service: loadPermBufBlockages
+CTS related app options set by user:
+ICG reference list:
+DBG: ccdInfra::ccdInfra
+DBG: ccdInfra::initAppOptions
+DBG: ccdInfra::initCtsFixedBalancePins
+CCD initialization runtime: cpu 0.015007, elapsed 0.009244, speed up 1.623432.
+CCD-Info: App options set by user
+CCD: Netlist change observers are disabled for incremental timing updates
+CCD: using 4 threads
+CTSSC route status detected: clock (VR 0, GR 6, DR 699), data (VR 0, GR 11831, DR 0); stage = auto, isPostRoute = FALSE
+INFO: optApi switch to CTS purpose
+PDC app_options settings =========
+CCD: Initial QOR:
+CCD-QoR: Timing: WNS = 23.637, TNS = 0.000, NVP = 0, UNWEIGHTED_TNS = 0.000, WNHS = 0.005, TNHS = 0.000, NHVP = 0, UNWEIGHTED_TNHS = 0.000, R2R(wns=23.637354, tns=0.000000, nvp=0)
+CCD: Before drc optimization
+CCD: After drc optimization:
+CCD-QoR: Timing: WNS = 23.637, TNS = 0.000, NVP = 0, UNWEIGHTED_TNS = 0.000, WNHS = 0.005, TNHS = 0.000, NHVP = 0, UNWEIGHTED_TNHS = 0.000, R2R(wns=23.637354, tns=0.000000, nvp=0)
+CCD: After CG based optimization:
+CCD-QoR: Timing: WNS = 23.637, TNS = 0.000, NVP = 0, UNWEIGHTED_TNS = 0.000, WNHS = 0.005, TNHS = 0.000, NHVP = 0, UNWEIGHTED_TNHS = 0.000, R2R(wns=23.637354, tns=0.000000, nvp=0)
+INFO: optApi switch to OPTO purpose
+CTS-038    1  Warning  No clock routing rule is specified.
+INFO: cellmap features:  adv-rules=(N), pdc=(N), clock-rules=(Y)
+INFO: cellmap features:  adv-rules=(Y), pdc=(Y), clock-rules=(Y)
+INFO: cellmap features:  adv-rules=(N), pdc=(N), clock-rules=(Y)
+CTS related app options set by user:
+ICG reference list:
+CCD MOO settings for (gccd2gre, qor_tns): 2 engines
+DBG: ccdInfra::ccdInfra
+CCD blasted path groups
+DBG: ccdInfra::initAppOptions
+DBG: ccdInfra::initCtsFixedBalancePins
+CCD initialization runtime: cpu 0.116822, elapsed 0.039143, speed up 2.984493.
+CCD-Info: App options set by user
+CCD: Netlist change observers are disabled for incremental timing updates
+CCD: using 4 threads
+CTSSC route status detected: clock (VR 0, GR 6, DR 699), data (VR 0, GR 11831, DR 0); stage = auto, isPostRoute = FALSE
+INFO: optApi switch to CTS purpose
+CCD: Initial QOR:
+CCD-QoR: Timing: WNS = 23.637, TNS = 0.000, NVP = 0, UNWEIGHTED_TNS = 0.000, WNHS = 0.005, TNHS = 0.000, NHVP = 0, UNWEIGHTED_TNHS = 0.000, R2R(wns=23.637354, tns=0.000000, nvp=0)
+CCD: After FMAX optimization:gccd2gre_NONE_POWER0
+CCD-QoR: Timing: WNS = 23.637, TNS = 0.000, NVP = 0, UNWEIGHTED_TNS = 0.000, WNHS = 0.005, TNHS = 0.000, NHVP = 0, UNWEIGHTED_TNHS = 0.000, R2R(wns=23.637354, tns=0.000000, nvp=0)
+CCD: After FMAX optimization:gccd2gre_NONE_POWER1
+CCD-QoR: Timing: WNS = 23.616, TNS = 0.000, NVP = 0, UNWEIGHTED_TNS = 0.000, WNHS = 0.003, TNHS = 0.000, NHVP = 0, UNWEIGHTED_TNHS = 0.000, R2R(wns=23.616449, tns=0.000000, nvp=0)
+INFO: optApi switch to OPTO purpose
+CCD unblasted path groups
+CTS-038    1  Warning  No clock routing rule is specified.
+INFO: cellmap features:  adv-rules=(N), pdc=(N), clock-rules=(Y)
+INFO: cellmap features:  adv-rules=(Y), pdc=(Y), clock-rules=(Y)
+INFO: cellmap features:  adv-rules=(N), pdc=(N), clock-rules=(Y)
+ISR-INFO: dsizeFilter CandPruners: dSizeVTGroupCandPruner dSizeFootprintCandPruner dSizeKneeCandPruner
+ISR-INFO: dsizeFilter ResultPruners: tpo_cost_rp delay_scale_rp arn_tran_rp mog_mcmm_delay_rp
+ISR-INFO: dsizeFilter CandPruners: dSizeVTGroupCandPruner dSizeFootprintCandPruner
+ISR-INFO: dsizeFilter ResultPruners: tpo_cost_rp delay_scale_rp arn_tran_rp mog_mcmm_delay_rp
+INFO: Sending timing info to router
+PDC app_options settings =========
+GR Routing Service: Wrote GR congmap to NDM
+INFO: Running refresh_via_ladders
+INFO: wire-opt feature for router enabled
+INFO: wire-opt feature for router enabled
+HPWL   0 ~   50 microns: Net Count      143	Total HPWL         2875 microns
+HPWL  50 ~  100 microns: Net Count       30	Total HPWL         1906 microns
+HPWL 100 ~  200 microns: Net Count        1	Total HPWL          138 microns
+HPWL 200 ~  300 microns: Net Count        0	Total HPWL            0 microns
+HPWL 300 ~  400 microns: Net Count        0	Total HPWL            0 microns
+HPWL 400 ~  500 microns: Net Count        0	Total HPWL            0 microns
+HPWL 500 ~  600 microns: Net Count        0	Total HPWL            0 microns
+HPWL 600 ~  700 microns: Net Count        0	Total HPWL            0 microns
+HPWL 700 ~  800 microns: Net Count        0	Total HPWL            0 microns
+HPWL 800 ~  900 microns: Net Count        0	Total HPWL            0 microns
+HPWL 900 ~ 1000 microns: Net Count        0	Total HPWL            0 microns
+HPWL     > 1000 microns: Net Count        0	Total HPWL            0 microns
+INFO: place.legalize.enable_advanced_legalizer not set - need to revert CLO
+INFO: First Clock-opt did not mark run with CLO enabled/disabled property
+INFO: Concurrent Legalization and Optimization (CLO) Reverted
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+APS-MCMM: Setup/DRC-only scenario grouping = [0 1 2]
+APS-MCMM: Hold scenario grouping = [0 1 2]
+APS-MCMM: Leakage scenario grouping = [0 1 2]
+APS-MCMM: Dynamic scenario grouping = [0 1 2]
+INFO: wire-opt feature for router enabled
+GR Routing Service: Started IMRD
+GR Routing Service: ndmAttrDef 'usr_tmng_crit' created with default value 0
+GR Routing Service: ndmAttrDef 'rted_by_minDly' created with default value 0
+GR Routing Service: ndmAttrDef 'port_subnet_crit_blkConn' created with default value 0
+GR Routing Service: ndmAttrDef 'port_subnet_crit_blkPort' created with default value 0
+GR Routing Service: Setting costIdx to 3
+GR Routing Service: rebuildCongmap: itr = 3
+GR Routing Service: Setting costIdx to 3
+GR Routing Service: loadPermBufBlockages
+GR Routing Service: Setting costIdx to 3
+INFO: Sending timing info to router
+PDC app_options settings =========
+GR Routing Service: Wrote GR congmap to NDM
+INFO: Running refresh_via_ladders
+INFO: wire-opt feature for router enabled
+INFO: wire-opt feature for router enabled
+HPWL   0 ~   50 microns: Net Count        9	Total HPWL          163 microns
+HPWL  50 ~  100 microns: Net Count        1	Total HPWL           62 microns
+HPWL 100 ~  200 microns: Net Count        0	Total HPWL            0 microns
+HPWL 200 ~  300 microns: Net Count        0	Total HPWL            0 microns
+HPWL 300 ~  400 microns: Net Count        0	Total HPWL            0 microns
+HPWL 400 ~  500 microns: Net Count        0	Total HPWL            0 microns
+HPWL 500 ~  600 microns: Net Count        0	Total HPWL            0 microns
+HPWL 600 ~  700 microns: Net Count        0	Total HPWL            0 microns
+HPWL 700 ~  800 microns: Net Count        0	Total HPWL            0 microns
+HPWL 800 ~  900 microns: Net Count        0	Total HPWL            0 microns
+HPWL 900 ~ 1000 microns: Net Count        0	Total HPWL            0 microns
+HPWL     > 1000 microns: Net Count        0	Total HPWL            0 microns
+INFO: place.legalize.enable_advanced_legalizer not set - need to revert CLO
+INFO: First Clock-opt did not mark run with CLO enabled/disabled property
+PATHGROUP QOR
+SCENARIO QOR
+DESIGN QOR
+INFO: wire-opt feature for router enabled
+VIA LADDER INFO: found 0 via ladder DRCs across 0 nets.
+DRC-SUMMARY:
+DRC-SUMMARY:
+DR finished with 0 open nets, of which 0 are frozen
+DR finished with 0 violations
+DRC-SUMMARY:
+INFO: route_opt is running in balanced flow mode
+INFO: Total Power Aware Optimization Enabled (Dynamic + Leakage)
+RO is run without TCE settings
+INFO: route_opt is running with flow.common.io_priority high.
+INFO: place.legalize.enable_advanced_legalizer not set - need to revert CLO
+INFO: Concurrent Legalization and Optimization (CLO) Reverted
+INFO: place.legalize.enable_advanced_legalizer not set - need to revert CLO
+INFO: Propagating Switching Activities
+INFO: Switching Activity propagation took     0.00001 sec
+INFO: Propagating Switching Activity for all power flows
+PATHGROUP QOR
+SCENARIO QOR
+DESIGN QOR
+INFO: using 4 threads
+PDC app_options settings =========
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: creating 48(r) x 48(c) GridCells YDim 5.016 XDim 5.016
+INFO: number of GridCells (geofence): 2304
+INFO: place.legalize.enable_advanced_legalizer not set - need to revert CLO
+INFO: cellmap features:  adv-rules=(Y), pdc=(Y), clock-rules=(Y)
+INFO: cellmap features:  adv-rules=(N), pdc=(Y), clock-rules=(Y)
+INFO: cellmap features:  adv-rules=(Y), pdc=(Y), clock-rules=(Y)
+INFO: cellmap features:  adv-rules=(N), pdc=(Y), clock-rules=(Y)
+INFO: Sending timing info to router
+INFO: wire-opt feature for router enabled
+INFO: timer data saved to geofence_1828503_632113560.timdat
+PDC app_options settings =========
+INFO: Router Max Iterations set to : 5
+VIA LADDER INFO: found 0 via ladder DRCs across 0 nets.
+HPWL   0 ~   50 microns: Net Count       88	Total HPWL         1606 microns
+HPWL  50 ~  100 microns: Net Count       28	Total HPWL         1780 microns
+HPWL 100 ~  200 microns: Net Count        3	Total HPWL          502 microns
+HPWL 200 ~  300 microns: Net Count        0	Total HPWL            0 microns
+HPWL 300 ~  400 microns: Net Count        0	Total HPWL            0 microns
+HPWL 400 ~  500 microns: Net Count        0	Total HPWL            0 microns
+HPWL 500 ~  600 microns: Net Count        0	Total HPWL            0 microns
+HPWL 600 ~  700 microns: Net Count        0	Total HPWL            0 microns
+HPWL 700 ~  800 microns: Net Count        0	Total HPWL            0 microns
+HPWL 800 ~  900 microns: Net Count        0	Total HPWL            0 microns
+HPWL 900 ~ 1000 microns: Net Count        0	Total HPWL            0 microns
+HPWL     > 1000 microns: Net Count        0	Total HPWL            0 microns
+DRC-SUMMARY:
+ECO Route finished with 0 open nets, of which 0 are frozen
+ECO Route finished with 0 violations
+DRC-SUMMARY:
+INFO: Smart Arc Optimization disabled. 0 modes cleared.
+PATHGROUP QOR
+SCENARIO QOR
+DESIGN QOR
+APR_ROUTED (constraint violations: 14; run apr_eco.tcl next)
+CPU usage for this session:    195 seconds (  0.05 hours)

@@ -1,0 +1,5 @@
+SDF_NOTE slow: removal-check warnings=17
+gate slow max PASS
+SDF_NOTE fast: removal-check warnings=17
+gate fast min PASS
+GATE_SIM_PASS

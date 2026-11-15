@@ -1,0 +1,17 @@
+IO ring (library) errors:
+  PO.W.2       738
+  M9.W.2       514
+  PO.W.4       416
+  PO.S.3       390
+  VIA1.W       22
+  CO.S.3       20
+  M2.S.2       12
+  M2.S.1       6
+  M2.S.3.1     2
+PAD-side PG stitch errors (LEF pin location vs IO GDS metal):
+  M5.S.3.3     4
+    M5.S.3.3 (420.190, 622.818) (420.468, 624.500)
+    M5.S.3.3 (460.190, 627.000) (460.468, 631.000)
+    M5.S.3.3 (459.532, 295.500) (459.810, 297.182)
+    M5.S.3.3 (499.532, 289.000) (499.810, 293.000)
+core / PAD-to-core errors:

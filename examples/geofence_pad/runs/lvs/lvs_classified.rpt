@@ -1,0 +1,10 @@
+NMOS[n105] matched=12677 unmatched sch=0 lay=0
+NMOS[n25] matched=152 unmatched sch=0 lay=0
+PMOS[p105] matched=12721 unmatched sch=0 lay=0
+PMOS[p25] matched=90 unmatched sch=0 lay=0
+RES[rppoly_wos] matched=8 unmatched sch=0 lay=0
+NP[nd] matched=480 unmatched sch=80 lay=0
+PN[pd] matched=120 unmatched sch=440 lay=0
+unmatched instances: 530 (outside PAD: 0)
+schematic nets in connection errors: VDD VDDIO VSS VSSIO X[0] X[1] X[2] X[3] X[4] X[5] X[6] X[7] X[8] X[9] Y[0] Y[1] Y[2] Y[3] Y[4] Y[5] Y[6] Y[7] Y[8] Y[9] clk reset
+NOTE: PG nets ['VDD', 'VDDIO', 'VSS', 'VSSIO'] appear in the same connection-error group (possible PG short in layout)
