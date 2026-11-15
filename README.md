@@ -1,77 +1,87 @@
 # IC_flow_skill
 
-給 [Claude Code](https://claude.com/claude-code) 用的 **digital IC（cell-based）RTL → GDS 教學流程**，包含兩部分：
+**把一份 Verilog 程式一路做成晶片版圖（RTL → GDS），每一步都有腳本、有說明、有判定。**
 
-1. **`digital-ic-flow` skill**：每個階段在做什麼、怎樣才算通過、實際踩過的坑，加上每個階段一份可以直接填的 Synopsys 公版腳本（`.tcl`／`.sh`）。Claude 會在你問到 IC 流程、要寫或檢查 dc_shell／pt_shell／icc2_shell 腳本、或某一步失敗時自動使用。
-2. **`/ic_flow` 面板**：在 Claude Code 右側開一個面板，即時顯示專案目前跑到哪一個階段、每一步的 PASS／FAIL 與關鍵數字。點任一階段可以看說明、通過標準、產出與 log 結果行，以及該階段的動畫。
+這是給 [Claude Code](https://claude.com/claude-code)（Anthropic 的 AI 寫程式助手，在終端機裡使用）用的教學包。對象是第一次接觸數位 IC 後段流程的學生，例如做完 IC Contest 題目、想知道「合成之後還要做什麼」的人。
 
-腳本整理自 IC Contest 風格的 lab（geofence、REFRACT），在 SAED32 EDK 與 CBDK_IC_Contest 上實際跑過。
+裝好之後你會得到兩樣東西：
 
-## 流程
-
-| # | 階段 | 工具 |
+| | 是什麼 | 你可以拿它做什麼 |
 |---|---|---|
-| 0 | 要不要上 IO PAD（`USE_PAD`），產生 chip wrapper 與帶延遲的 PAD model | `pad_tools.py` |
-| 1 | RTL 模擬 | VCS |
-| 2 | 邏輯合成 | Design Compiler |
-| 3 | 等價驗證 | Formality |
-| 4 | 佈局前 STA（三個 corner） | PrimeTime |
-| 5 | 閘級模擬＋SDF | VCS |
-| 6 | APR：NDM → floorplan → place → CTS → route → ECO → finish | IC Compiler II |
-| 7 | DRC／LVS（電晶體層級） | IC Validator |
-| 8 | 寄生萃取 | StarRC |
-| 9 | 繞線後 STA／Formality／SDF 模擬 | PrimeTime、Formality、VCS |
+| **`digital-ic-flow` skill** | 給 Claude 看的「教材＋腳本範本」 | 問 Claude「下一步要做什麼？」「這個 DRC 錯誤是什麼意思？」「幫我寫 PrimeTime 腳本」，它會照這份教材回答，並用裡面的公版腳本幫你建專案、跑流程 |
+| **`/ic_flow` 面板** | Claude Code 裡的即時進度面板 | 看專案跑到哪一步、哪一步 PASS／FAIL、關鍵數字；點任一階段看白話說明 |
 
-每個腳本最後都會解析報告並印出成功標記，**判定依據是報告內容，不是工具的 exit code**。`run_stage.sh` 會把每一步的結果寫進 `runs/<stage>/status.txt`，終端機表格和 `/ic_flow` 面板都讀這些檔案。
+> 腳本整理自實際做過的 lab（IC Contest 的 geofence、REFRACT），在 SAED32 教學製程與 CBDK_IC_Contest 上跑過，[完整流程的結果](#-五分鐘體驗不用裝-eda-工具)放在 `examples/`。
 
-這個 skill 是教學用的：每次要跑流程前，Claude 都會先問你要跑「無 PAD（只有核心）」、「有 PAD（全晶片）」還是兩種都跑，方便比較 PAD 延遲、1 pF 負載、die 大小與 DRC／LVS 的差別。
+---
 
-## 安裝
+## 目錄
 
-### 方法一：當 plugin 安裝（skill＋面板一起裝）
+1. [先搞懂：這個流程在做什麼？](#-先搞懂這個流程在做什麼)
+2. [五分鐘體驗（不用裝 EDA 工具）](#-五分鐘體驗不用裝-eda-工具)
+3. [安裝](#-安裝)
+4. [用它跑你自己的設計](#-用它跑你自己的設計)
+5. [看懂結果](#-看懂結果)
+6. [卡關了怎麼辦](#-卡關了怎麼辦)
+7. [常見問題](#-常見問題)
+8. [需求、限制、檔案說明](#-需求與限制)
 
-在 Claude Code 的提示列輸入：
+---
 
+## 🧭 先搞懂：這個流程在做什麼？
+
+你寫的 Verilog（**RTL**）只是「描述電路行為的程式」。要變成真的晶片，還要經過一連串工具把它變成**邏輯閘**，再把邏輯閘**擺到矽晶片上、用金屬線連起來**，最後檢查做出來的東西**又快又正確、而且工廠做得出來**。
+
+可以把它想成蓋房子：
+
+| 蓋房子 | 晶片流程 | 這個 repo 的階段 |
+|---|---|---|
+| 寫需求、確認格局合理 | 寫 RTL、跑模擬確認功能對 | 1 RTL 模擬 |
+| 把需求換成標準建材清單 | **合成**：RTL → 標準元件（AND、OR、正反器…）組成的 netlist | 2 合成 |
+| 確認建材清單跟需求一致 | **等價驗證**：數學證明 netlist 和 RTL 功能一樣 | 3 Formality |
+| 估算水電夠不夠用 | **STA**：算每條訊號路徑在時脈內跑不跑得完 | 4 STA |
+| 用建材清單再模擬一次 | **閘級模擬**：netlist 加上元件延遲再跑一次 testbench | 5 閘級模擬 |
+| 畫平面圖、擺家具、拉管線 | **APR**：擺放元件、長時脈樹、繞線 | 6 APR |
+| 建管處審圖 | **DRC／LVS**：檢查版圖合不合製程規則、和電路圖一不一致 | 7 DRC／LVS |
+| 量實際管線長度 | **寄生萃取**：算出每條金屬線真正的電阻電容 | 8 StarRC |
+| 用實際管線重新驗收 | 用真實線延遲再做一次 STA、等價驗證、模擬 | 9 繞線後驗證 |
+
+```mermaid
+flowchart LR
+  P["0 PAD 規劃<br/>（選用）"] --> A["1 RTL 模擬<br/>VCS"] --> B["2 合成<br/>Design Compiler"] --> C["3 等價驗證<br/>Formality"] --> D["4 STA<br/>PrimeTime"] --> E["5 閘級模擬<br/>VCS + SDF"]
+  E --> F["6 APR<br/>IC Compiler II"] --> G["7 DRC / LVS<br/>IC Validator"] --> H["8 寄生萃取<br/>StarRC"] --> I["9 繞線後驗證<br/>PT / FM / VCS"]
 ```
-/plugin install ic-flow --marketplace charlesHYC/IC_flow_skill
-```
 
-出現 `Add marketplace?` 時按 `y`，再選安裝範圍（建議 user，按 Enter）。
+**每一步怎樣才算過？** 不是看工具有沒有當掉，而是**讀報告**：例如 STA 的 slack（時間餘裕）要 ≥ 0、DRC 要 `CLEAN`、LVS 要 `PASS`。每個腳本最後都會自己讀報告、印出 `XXX_PASS` 或失敗，你不用自己翻幾千行 log。
 
-從 shell 安裝：
+### 要不要加 PAD？
 
-```
-claude plugin install ic-flow --marketplace charlesHYC/IC_flow_skill
-```
+**PAD** 是晶片邊緣的接腳零件，負責打線、防靜電、推動板子上的負載。比賽通常只做「核心」（沒有 PAD）；真正的晶片則一定要有。
 
-桌面版（`/plugin` 無法使用時）：點提示框旁邊的 **+** → **Plugins** → **Add marketplace**，輸入 `charlesHYC/IC_flow_skill`，再 **Add plugin**。
+| | 無 PAD（`USE_PAD 0`） | 有 PAD（`USE_PAD 1`） |
+|---|---|---|
+| 做到哪 | 只有你的電路本體 | 你的電路＋外圍一圈 PAD 的完整晶片 |
+| 時序 | 不考慮 PAD | 輸入多約 0.4 ns、輸出推 1 pF 約 1.3 ns，**從 RTL 模擬就看得到** |
+| 晶片大小 | 小（例：240 µm） | 被 PAD 數量撐大（例：920 µm） |
+| DRC／LVS | 可以完全通過 | 最多到 `PAD_LIMITED`（見[限制](#-需求與限制)） |
+| 適合 | 先把流程跑通 | 想看完整晶片長什麼樣子 |
 
-### 方法二：只裝 skill
+不確定的話，**兩種都跑來比較**。Claude 每次開始跑流程前都會問你選哪一種。
+
+---
+
+## 🚀 五分鐘體驗（不用裝 EDA 工具）
+
+`examples/` 裡放了兩個**已經跑完**的 geofence 專案，一個無 PAD、一個有 PAD。只要有 Python 3 就能看結果：
 
 ```bash
 git clone https://github.com/charlesHYC/IC_flow_skill.git
-cp -r IC_flow_skill/skills/digital-ic-flow ~/.claude/skills/
+cd IC_flow_skill
+python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/geofence_core
+python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/geofence_pad
 ```
 
-## 使用
-
-1. 開新專案時，跟 Claude 說例如「用 digital-ic-flow 幫我建一個跟 geofence 一樣的流程」。Claude 會先問要不要上 PAD，再把 `templates/` 複製到專案的 `scripts/`。
-2. 依設計修改 `scripts/flow_config.tcl`（`DESIGN`、`RTL_FILES`、`CLK_PORT`、`PERIOD`、`PROCESS`、PDK 路徑…），以及模擬腳本檔頭的 tb、pattern、PASS 字串。
-3. 一次跑完：`bash scripts/run_all.sh`；或逐階段跑：`bash scripts/run_stage.sh synthesis`。
-4. 看進度：
-   - Claude Code 裡輸入 `/ic_flow`（自動跟隨最近有動的專案）或 `/ic_flow <專案路徑>`，Esc 關閉。
-   - 終端機：`bash scripts/run_stage.sh status`。
-
-## Demo：geofence 跑完整個流程
-
-`examples/` 裡有兩個實際跑完的 geofence 專案（SAED32、30 ns），分別是無 PAD 與有 PAD 版本。只保留流程表格與面板需要的資料：每個階段的 `status.txt` 和 log 裡的結果標記行。不含 netlist、GDS 或製程資料，所以不用裝 EDA 工具也能看。
-
-| 專案 | 模式 | 結果 |
-|---|---|---|
-| [`examples/geofence_core`](examples/geofence_core) | `USE_PAD 0`（只有核心） | `ALL_STAGES_PASS`：DRC CLEAN、LVS PASS |
-| [`examples/geofence_pad`](examples/geofence_pad) | `USE_PAD 1`（加 IO PAD 的全晶片） | `ALL_STAGES_DONE_PAD_LIMITED` |
-
-**終端機表格**（`bash scripts/run_stage.sh status`，完整內容見 [examples/geofence_pad/flow_table.txt](examples/geofence_pad/flow_table.txt)）：
+你會看到像這樣的表格（有 PAD 版本，節錄）：
 
 ```
 ┌──────────────────────────────────────────────┬─────────────┬──────────────────────────────────────────┬──────────┐
@@ -86,37 +96,233 @@ cp -r IC_flow_skill/skills/digital-ic-flow ~/.claude/skills/
 │ STA_postroute (primetime_spef)               │ PASS        │ setup +22.877 / hold +0.016 ns           │ 0:19 x2  │
 │ Gate_post (vcs_postroute_sdf)                │ PASS        │ SDF $removal warn 17/17                  │ 0:07     │
 └──────────────────────────────────────────────┴─────────────┴──────────────────────────────────────────┴──────────┘
+  ALL_STAGES_DONE_PAD_LIMITED  全部跑完；DRC／LVS 只剩 IO library 的問題，這不等於 PASS。
 ```
 
-**自己打開看**（clone 之後）：
+完整表格：[geofence_core](examples/geofence_core/flow_table.txt)（全部 PASS）、[geofence_pad](examples/geofence_pad/flow_table.txt)。表格每一欄的意思見[看懂結果](#-看懂結果)。
+
+裝好 plugin 之後，在 Claude Code 輸入 `/ic_flow <你 clone 的路徑>/examples/geofence_pad`，就能在面板上點每個階段看說明和動畫。
+
+---
+
+## 📦 安裝
+
+**先準備**：裝好 [Claude Code](https://claude.com/claude-code)，在終端機輸入 `claude` 能啟動。
+
+### 方法一：一次裝好 skill＋面板（建議）
+
+1. 在終端機輸入 `claude` 啟動 Claude Code。
+2. 在提示列輸入：
+   ```
+   /plugin install ic-flow --marketplace charlesHYC/IC_flow_skill
+   ```
+3. 出現 `Add marketplace?` 時按 `y`。
+4. 選安裝範圍時直接按 Enter（user：所有專案都能用）。
+5. 看到 `Installed ic-flow` 就完成了。輸入 `/ic_flow` 試試看。
+
+不想進 Claude Code 的話，也可以直接在 shell 輸入：
 
 ```bash
-python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/geofence_pad   # 終端機表格
+claude plugin install ic-flow --marketplace charlesHYC/IC_flow_skill
 ```
 
-裝了 plugin 的話，在 Claude Code 輸入 `/ic_flow <repo 路徑>/examples/geofence_pad` 就能在面板上看。點任一階段可以看說明、通過標準、產出、log 結果行和該階段的動畫。
+桌面版 App（`/plugin` 不能用時）：點提示框旁的 **+** → **Plugins** → **Add marketplace**，輸入 `charlesHYC/IC_flow_skill`，再按 **Add plugin**。
 
-## 需求與注意事項
+### 方法二：只要 skill，不要面板
 
-- **工具**：Synopsys VCS、Design Compiler、Formality、PrimeTime、IC Compiler II、IC Validator、StarRC（需自行取得授權），以及 Python 3。腳本預設用 `source /.bash_EDA` 載入工具環境，請依你的機器修改 `run_stage.sh`。
-- **製程資料不包含在這個 repo**。腳本裡的 `/mnt/nfs/opt/PROCESS/...` 只是路徑範例，請改成你機器上 SAED32 EDK／CBDK_IC_Contest 的位置。SAED32 是 Synopsys 的教學用製程，依其授權不得另行散布。
-- **`USE_PAD 1` 只支援 SAED32**（CBDK_IC_Contest 沒有 IO PAD library）。SAED32 `io_std` 的 LEF／GDS／CDL 彼此不一致，因此有 PAD 的版本 DRC／LVS 最多只會到 `PAD_LIMITED`（核心區乾淨、MOS／電阻全對上，剩下的錯誤都在 IO library 裡），**不等於 PASS**。詳細說明見 `skills/digital-ic-flow/references/pitfalls.md`。
-- 尚未實測：`PROCESS cbdk` 分支用本公版重跑、bidirectional PAD、`io_std` 以外的 IO library。
+```bash
+git clone https://github.com/charlesHYC/IC_flow_skill.git
+mkdir -p ~/.claude/skills
+cp -r IC_flow_skill/skills/digital-ic-flow ~/.claude/skills/
+```
 
-## 檔案
+重新啟動 Claude Code 就會生效。
+
+---
+
+## 🛠 用它跑你自己的設計
+
+### 第 1 步：準備好這些檔案
+
+| 你需要 | 例子（geofence） | 說明 |
+|---|---|---|
+| RTL | `rtl/geofence.v` | 你的設計 |
+| testbench | `tb/tb.sv` | 比賽給的 tb 就可以 |
+| 測資 | `patterns/` | tb 會讀的輸入／標準答案 |
+| tb 成功時印的字 | `ALL PASS` | 腳本用它判斷模擬有沒有過 |
+| 時脈 | port 名稱 `clk`、週期 30 ns | 比賽題目通常有規定 |
+
+建議的專案資料夾長這樣（`scripts/` 和 `runs/` 會自動產生）：
 
 ```
-.claude-plugin/          plugin 與 marketplace 設定
-hooks/                   /ic_flow 面板（register.tsx、anim.ts、測試）
-types/                   面板的狀態型別
-examples/                demo 專案（geofence 無 PAD／有 PAD），可直接看流程表格與 /ic_flow 面板
-skills/digital-ic-flow/
-  SKILL.md               skill 本體：流程總覽、使用規則
-  references/            flow_stages.md（每階段原理）、pitfalls.md（踩過的坑）、glossary.md（縮寫對照）
-  templates/00_common/   flow_config.tcl、run_stage.sh、run_all.sh、flow_dashboard.py
-  templates/01_…07_*/    各階段公版腳本
+my_project/
+├── rtl/        你的 Verilog
+├── tb/         testbench
+├── patterns/   測資
+├── scripts/    公版腳本（Claude 幫你複製進來）
+└── runs/       每個階段的輸出，一個階段一個資料夾
+```
+
+### 第 2 步：請 Claude 幫你建專案
+
+在 `my_project/` 裡啟動 `claude`，直接用中文說：
+
+> 用 digital-ic-flow 幫我把這個設計建成完整流程，設計叫 geofence，clock 是 clk、30 ns。
+
+Claude 會：
+
+1. 先問你要**無 PAD、有 PAD 還是兩種都跑**。
+2. 把公版腳本複製到 `scripts/`。
+3. 幫你填好 `scripts/flow_config.tcl` 這個總設定檔，最重要的幾行是：
+   ```tcl
+   set DESIGN     geofence                       ;# 你的 top module 名稱
+   set RTL_FILES  [list $PROJ/rtl/geofence.v]    ;# RTL 檔案
+   set CLK_PORT   clk                            ;# 時脈 port
+   set PERIOD     30.0                           ;# 時脈週期（ns）
+   set USE_PAD    0                              ;# 0 = 無 PAD，1 = 有 PAD
+   set PROCESS    saed32                         ;# saed32 或 cbdk
+   ```
+4. 填好模擬腳本開頭的 tb 路徑、測資、成功字串。
+
+也可以自己改這些檔案，每個腳本開頭都有標「依設計修改」的區塊。
+
+### 第 3 步：跑起來
+
+**一個階段一個階段跑**（第一次建議這樣，比較好理解每步在做什麼）：
+
+```bash
+bash scripts/run_stage.sh rtl_sim      # 1 RTL 模擬
+bash scripts/run_stage.sh synthesis    # 2 合成
+bash scripts/run_stage.sh formality    # 3 等價驗證
+bash scripts/run_stage.sh sta          # 4 STA
+bash scripts/run_stage.sh gate_sim     # 5 閘級模擬
+# …之後是 ndm、apr、eco、finish、drc、lvs、starrc、pt_post、fm_post、gate_post
+```
+
+**或一次全部跑完**（geofence 約 20–30 分鐘）：
+
+```bash
+bash scripts/run_all.sh
+```
+
+`run_all.sh` 遇到失敗會停下來，修正回圈（例如 DRC 有小錯就自動補、繞線後時序差一點就自動換大顆元件）會自己跑。
+
+也可以直接叫 Claude 跑：「幫我跑合成，跑完告訴我面積和 slack。」
+
+### 第 4 步：看進度
+
+- **終端機**：`bash scripts/run_stage.sh status`，隨時印出流程表格。
+- **Claude Code 面板**：輸入 `/ic_flow`，右邊會開即時面板，每 5 秒更新：
+  - 正在跑的階段有轉圈動畫 `⠋ RUNNING`。
+  - **點任一階段**，下面會顯示這一步在做什麼（What）、怎樣算過（Pass）、產出什麼（Output）、關鍵數字（Numbers）、log 裡的結果行（Results）和 log 位置。
+  - 下方 **History** 列出跑過的專案，點一下或按 1–5 切換。
+  - 按 `Esc` 關閉。
+
+---
+
+## 📊 看懂結果
+
+### 表格的每一欄
+
+| 欄位 | 意思 |
+|---|---|
+| **Stage (steps)** | 階段名稱，括號裡是這一步做的事。名字後面有 `*` 的是**修正回圈**：只有上一步發現問題才會跑 |
+| **Status** | 這一步的判定（見下表） |
+| **Key numbers** | 最重要的數字，例如合成的面積和 slack、DRC 錯誤數 |
+| **Time** | 花了多久；`x3` 表示這一輪跑了 3 次（修正回圈會讓同一步重跑） |
+
+### 狀態
+
+| 狀態 | 意思 | 要做什麼 |
+|---|---|---|
+| `PASS` | 報告確認通過 | 繼續下一步 |
+| `FAIL` | 報告裡有問題 | 看 log，見[卡關了怎麼辦](#-卡關了怎麼辦) |
+| `RUNNING` | 正在跑 | 等 |
+| `PAD_LIMITED` | 只有 PAD 模式會出現：你的電路沒問題，錯誤都在 PAD library 裡 | **這不是 PASS**，但已經是這套教學製程能做到的最好結果 |
+| `-` | 還沒跑 | |
+| `skip` | 無 PAD 模式跳過 PAD 規劃 | |
+| `not needed` | 修正回圈不需要跑 | |
+
+### 幾個常看到的數字
+
+| 數字 | 意思 | 好的範圍 |
+|---|---|---|
+| **setup slack** | 訊號在下一個時脈來之前，還多出多少時間 | ≥ 0（負的代表太慢，要放寬週期或改電路） |
+| **hold slack** | 訊號會不會太快、蓋掉上一筆資料 | ≥ 0 |
+| **area** | 元件總面積（µm²） | 越小越好（比賽常用面積 × 時間評分） |
+| **DRC core 0** | 你的電路區域沒有違反製程規則 | 0 |
+| **MOS matched** | LVS 對上的電晶體數 | 全部對上 |
+
+三個 **corner**（slow／typical／fast）是指晶片在「最慢、一般、最快」三種製程、電壓、溫度條件下都要能正常運作。
+
+---
+
+## 🆘 卡關了怎麼辦
+
+1. **看是哪一步 FAIL**：`bash scripts/run_stage.sh status`，或在 `/ic_flow` 點那一列看 Results。
+2. **看 log**：每一步的輸出都在 `runs/<階段>/console.log`。
+3. **直接問 Claude**：
+   > synthesis FAIL 了，幫我看 runs/synthesis/console.log 是什麼問題。
+
+   這個 skill 裡有一份「實際踩過的坑」清單（[`pitfalls.md`](skills/digital-ic-flow/references/pitfalls.md)），Claude 會先對照它。
+4. **修好後重跑那一步**，例如 `bash scripts/run_stage.sh synthesis`，再繼續往下。
+
+---
+
+## ❓ 常見問題
+
+**Q：我沒有 Synopsys 工具，可以用嗎？**
+可以看 demo、讀教材、問 Claude 流程的問題；但要真的跑流程，需要學校或公司的 Synopsys 授權與伺服器。
+
+**Q：可以用在比賽嗎？**
+IC Contest 通常只評到第 5 步（RTL 模擬＋合成後閘級模擬），第 6–9 步是延伸練習。比賽用 CBDK_IC_Contest 製程時，把 `PROCESS` 設成 `cbdk`。
+
+**Q：`PAD_LIMITED` 是我做錯了嗎？**
+不是。SAED32 教學製程的 PAD library 自己的版圖檔和規格檔彼此不一致，加 PAD 的晶片一定會有這些錯誤。腳本會幫你確認錯誤都在 PAD 裡、你的電路是乾淨的。要完全乾淨的 DRC／LVS，用無 PAD 模式。
+
+**Q：看不懂縮寫（STA、CTS、SDF…）？**
+看 [`glossary.md`](skills/digital-ic-flow/references/glossary.md)，每個縮寫都有全名和白話解釋；或直接問 Claude「SDF 是什麼？」。
+
+**Q：每一步的原理在哪裡？**
+[`flow_stages.md`](skills/digital-ic-flow/references/flow_stages.md)：每個階段的目的、做法、檢查清單。
+
+---
+
+## 📋 需求與限制
+
+**需求**
+- Claude Code
+- Python 3
+- 真的要跑流程時：Synopsys VCS、Design Compiler、Formality、PrimeTime、IC Compiler II、IC Validator、StarRC（要自己有授權）
+- 製程：SAED32 EDK 或 CBDK_IC_Contest
+
+**要依你的環境修改**
+- 工具環境：`run_stage.sh` 預設執行 `source /.bash_EDA` 載入工具，請改成你機器上的設定方式。
+- 製程路徑：腳本裡的 `/mnt/nfs/opt/PROCESS/...` 是範例路徑，請改成你機器上製程檔的位置。**製程檔不包含在這個 repo 裡**（SAED32 依授權不得另行散布）。
+
+**已知限制**
+- 有 PAD 模式只支援 SAED32（CBDK_IC_Contest 沒有 PAD library）。
+- 有 PAD 模式的 DRC／LVS 最多到 `PAD_LIMITED`（原因見[常見問題](#-常見問題)與 [`pitfalls.md`](skills/digital-ic-flow/references/pitfalls.md)）。
+- 還沒實測過：`PROCESS cbdk` 用本公版跑完全流程、雙向（inout）PAD、`io_std` 以外的 PAD library。
+
+### 檔案說明
+
+```
+IC_flow_skill/
+├── skills/digital-ic-flow/          ← skill 本體
+│   ├── SKILL.md                     給 Claude 看的總說明與規則
+│   ├── references/
+│   │   ├── flow_stages.md           每個階段的原理與檢查清單
+│   │   ├── pitfalls.md              實際踩過的錯誤與解法
+│   │   └── glossary.md              縮寫對照（全名＋白話）
+│   └── templates/                   公版腳本，會被複製到你專案的 scripts/
+│       ├── 00_common/               總設定 flow_config.tcl、run_stage.sh、run_all.sh、流程表格
+│       ├── 01_rtl_sim/ … 07_signoff/  各階段腳本
+├── examples/                        兩個跑完的 demo（無 PAD／有 PAD）
+├── hooks/  types/                   /ic_flow 面板的程式
+└── .claude-plugin/                  plugin 安裝設定
 ```
 
 ## 授權
 
-[MIT](LICENSE)
+[MIT](LICENSE)：可以自由使用、修改、分享，保留版權聲明即可。
