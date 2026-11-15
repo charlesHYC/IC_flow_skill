@@ -23,10 +23,11 @@
 2. [五分鐘體驗（不用裝 EDA 工具）](#五分鐘體驗不用裝-eda-工具)
 3. [安裝](#安裝)
 4. [用它跑你自己的設計](#用它跑你自己的設計)
-5. [看懂結果](#看懂結果)
-6. [卡關了怎麼辦](#卡關了怎麼辦)
-7. [常見問題](#常見問題)
-8. [需求、限制、檔案說明](#需求與限制)
+5. [每個階段用哪些腳本](#每個階段用哪些腳本)
+6. [看懂結果](#看懂結果)
+7. [卡關了怎麼辦](#卡關了怎麼辦)
+8. [常見問題](#常見問題)
+9. [需求、限制、檔案說明](#需求與限制)
 
 ---
 
@@ -206,85 +207,19 @@ set PROCESS    saed32                         ;# saed32 或 cbdk
 
 ### 第 3 步：跑起來
 
-有兩種跑法，結果完全一樣：
-
-- **方法 A：用包裝好的腳本**（建議）。`run_stage.sh` 會幫你切到正確的資料夾、存 log、自動讀報告判定 PASS／FAIL、更新流程表格。
-- **方法 B：自己下工具指令**。想知道每一步實際跑了什麼，或要在別的環境手動跑時用。
-
-#### 方法 A：`run_stage.sh`
+每個階段一個指令，依序執行：
 
 ```bash
-bash scripts/run_stage.sh pad          # 0  只有 USE_PAD 1 才會做事
-bash scripts/run_stage.sh rtl_sim      # 1  RTL 模擬
-bash scripts/run_stage.sh synthesis    # 2  合成
-bash scripts/run_stage.sh formality    # 3  等價驗證
-bash scripts/run_stage.sh sta          # 4  STA（三個 corner）
-bash scripts/run_stage.sh gate_sim     # 5  閘級模擬
-bash scripts/run_stage.sh ndm          # 6-0 建 APR 用的 library
-bash scripts/run_stage.sh apr          # 6  floorplan → place → CTS → route
-bash scripts/run_stage.sh eco          # 6  修剩下的 max_cap／transition
-bash scripts/run_stage.sh finish       # 6  補 filler、寫出 GDS 與 netlist
-bash scripts/run_stage.sh drc          # 7a DRC
-bash scripts/run_stage.sh lvs          # 7b LVS
-bash scripts/run_stage.sh starrc       # 8  寄生萃取
-bash scripts/run_stage.sh pt_post      # 9a 繞線後 STA
-bash scripts/run_stage.sh fm_post      # 9b 繞線後等價驗證
-bash scripts/run_stage.sh gate_post    # 9c 繞線後閘級模擬
+bash scripts/run_stage.sh synthesis    # 例：跑合成
 ```
 
-一次全部跑完（geofence 約 20–30 分鐘），遇到失敗會停，修正回圈會自己跑：
+`run_stage.sh` 會切到 `runs/<階段>/`、執行對應的工具和腳本、把輸出存成 `console.log`，最後在 log 裡找成功標記判定 PASS／FAIL。全部 16 個階段的名稱、各自用哪些 `.tcl`、想自己下工具指令怎麼下，見下一節[每個階段用哪些腳本](#每個階段用哪些腳本)。
+
+一次全部跑完（geofence 約 20–30 分鐘），遇到失敗會停下來：
 
 ```bash
 bash scripts/run_all.sh
 ```
-
-#### 方法 B：每一步的實際指令
-
-規則都一樣：**先建好並進到 `runs/<階段>/` 資料夾**（`mkdir -p runs/<階段>/reports`，報告會寫在 `reports/`），執行工具，把畫面輸出存成 log，最後**在 log 裡找成功標記**，找到才算過。下面的指令都從專案根目錄 `my_project/` 開始。
-
-| # | 階段 | 在哪個資料夾執行 | 指令 | log 裡要出現（行首） |
-|---|---|---|---|---|
-| 0 | PAD 規劃（只有 `USE_PAD 1`） | `runs/pad` | 見下方說明 | `PAD_PASS` |
-| 1 | RTL 模擬 | `runs/rtl_sim` | `bash ../../scripts/run_rtl_sim.sh` | `ALL PASS` |
-| 2 | 合成 | `runs/synthesis` | `dc_shell -f ../../scripts/dc_syn.tcl` | `DC_PASS` |
-| 3 | 等價驗證 | `runs/formality` | `fm_shell -f ../../scripts/fm_rtl2gate.tcl` | `FM_PASS` |
-| 4 | STA（三個 corner 各跑一次） | `runs/sta` | `FLOW_CORNER=slow pt_shell -f ../../scripts/pt_prelayout.tcl`，再把 `slow` 換成 `typical`、`fast` | `STA_PASS slow` 等 |
-| 5 | 閘級模擬 | `runs/gate_sim` | `bash ../../scripts/run_gate_sim.sh` | `GATE_SIM_PASS` |
-| 6-0 | 建 NDM library | `runs/ndm` | `icc2_lm_shell -f ../../scripts/build_ndm.tcl` | `NDM_PASS` |
-| 6 | APR | `runs/apr` | `icc2_shell -f ../../scripts/apr_core.tcl` | `APR_ROUTED` |
-| 6 | APR ECO | `runs/apr` | `icc2_shell -f ../../scripts/apr_eco.tcl` | `APR_PASS` |
-| 6 | Finish | `runs/finish` | `icc2_shell -f ../../scripts/apr_finish.tcl` | `FINISH_PASS` |
-| 7a | DRC | `runs/drc` | `bash ../../scripts/run_icv_drc.sh` | `DRC_PASS`（PAD 模式 `DRC_PAD_LIMITED`） |
-| 7b | LVS | `runs/lvs` | `bash ../../scripts/run_icv_lvs.sh` | `LVS_PASS`（PAD 模式 `LVS_PAD_LIMITED`） |
-| 8 | 寄生萃取 | `runs/starrc` | `bash ../../scripts/run_starrc.sh` | `STARRC_PASS` |
-| 9a | 繞線後 STA（三個 corner） | `runs/pt_post` | `FLOW_CORNER=slow pt_shell -f ../../scripts/pt_postroute.tcl`，再換 `typical`、`fast` | `POSTROUTE_STA_PASS slow` 等 |
-| 9b | 繞線後等價驗證 | `runs/fm_post` | `fm_shell -f ../../scripts/fm_postroute.tcl` | `FM_POST_PASS` |
-| 9c | 繞線後閘級模擬 | `runs/gate_post` | `POSTROUTE=1 bash ../../scripts/run_gate_sim.sh` | `GATE_SIM_PASS` |
-
-例如手動跑合成：
-
-```bash
-mkdir -p runs/synthesis/reports
-cd runs/synthesis
-dc_shell -f ../../scripts/dc_syn.tcl < /dev/null | tee console.log
-grep '^DC_PASS' console.log && echo "合成通過" || echo "合成失敗，看 console.log"
-cd ../..
-```
-
-幾個要注意的地方：
-
-- **`< /dev/null`**：tcl 中途出錯時，工具會停在提示字元等你輸入；接 `/dev/null` 會讓它直接結束，不會卡住。
-- **有 PAD 時**：所有工具都會讀 `flow_config.tcl` 的 `USE_PAD`，也可以臨時用環境變數覆蓋，例如 `USE_PAD=1 dc_shell -f ...`。
-- **第 0 步 PAD 規劃**的參數來自 `flow_config.tcl`（`IN_PAD`、`OUT_PAD`、IO library 路徑），手動跑時是兩行 Python：
-  ```bash
-  python3 scripts/pad_tools.py wrapper  <DESIGN> runs/pad <IN_PAD> <OUT_PAD> rtl/*.v
-  python3 scripts/pad_tools.py padmodel <IO 的 .lib> <IN_PAD> <OUT_PAD> runs/pad/io_pad_sim.v 0.10 5 0.10 1000
-  ```
-  第一行從 RTL 的 port 產生晶片外殼 `<DESIGN>_chip.v`，第二行從 IO library 查表算出 PAD 延遲。
-- **修正回圈**（只有出問題才要跑）：
-  - DRC 有 M1 細條錯誤：在 `runs/apr` 跑 `icc2_shell -f ../../scripts/apr_drc_patch.tcl`（成功標記 `DRC_PATCH_PASS`），再重跑 Finish → DRC。
-  - 繞線後 STA 有違規：在 `runs/apr` 跑 `icc2_shell -f ../../scripts/apr_signoff_eco.tcl`（`SIGNOFF_ECO_PASS`），再重跑 Finish → DRC → LVS → StarRC → 繞線後 STA。
-- 有些機器的 ICV／Formality 會和系統的 Kerberos 函式庫衝突而無法啟動，`run_stage.sh` 裡的 `krb_fix` 是當時的解法，你的環境不一定需要。
 
 ### 第 4 步：看進度
 
@@ -294,6 +229,220 @@ cd ../..
   - **點任一階段**，下面會顯示這一步在做什麼（What）、怎樣算過（Pass）、產出什麼（Output）、關鍵數字（Numbers）、log 裡的結果行（Results）和 log 位置。
   - 下方 **History** 列出跑過的專案，點一下或按 1–5 切換。
   - 按 `Esc` 關閉。
+
+---
+
+## 每個階段用哪些腳本
+
+公版一共 28 個檔案，依流程階段分組如下。每一組寫出：用什麼工具、每個檔案在做什麼、產出什麼，以及怎麼執行。
+
+**執行方式（每個階段都一樣）**
+
+- 用包裝好的指令：`bash scripts/run_stage.sh <階段名>`（建議）。
+- 自己下工具指令：
+  ```bash
+  mkdir -p runs/<階段名>/reports && cd runs/<階段名>
+  <工具指令> < /dev/null | tee console.log    # < /dev/null：腳本出錯時工具不會卡在提示字元
+  grep '^<成功標記>' console.log                # 找得到才算通過
+  cd ../..
+  ```
+
+---
+
+### 共用：設定與執行入口
+
+| 檔案 | 做什麼 |
+|---|---|
+| `flow_config.tcl` | **總設定**。設計名稱、RTL、時脈、週期、要不要上 PAD、製程與 library 路徑、三個 corner 的對照表。所有 `.tcl` 第一行都會讀它，換設計主要改這一個檔 |
+| `run_stage.sh` | 單一階段的入口：切到 `runs/<階段>/`、執行工具、存 log、找成功標記判定 PASS／FAIL；`run_stage.sh status` 印出流程表格 |
+| `run_all.sh` | 依序跑完所有階段，包含修正回圈；遇到失敗會停 |
+| `flow_dashboard.py` | 讀 `runs/` 裡的狀態檔，印出流程表格（也提供 `/ic_flow` 面板用的資料） |
+
+---
+
+### 0. PAD 規劃（只有 `USE_PAD 1`）— Python
+
+決定晶片外圍要放哪些 PAD，並算出 PAD 的延遲，讓之後每一步都把 PAD 算進去。
+
+| 檔案 | 做什麼 |
+|---|---|
+| `pad_tools.py` | `wrapper`：讀 RTL 的 port，產生包住你設計的晶片外殼 `<DESIGN>_chip.v`（每個 port 接一顆 PAD）和 PAD 擺放計畫；`padmodel`：從 IO library 查表算出 PAD 延遲，寫成模擬用的 PAD model |
+| `constraints_chip.sdc` | 晶片版的時序約束：port 在 PAD 外側、輸出推 1 pF 板級負載。之後合成、STA、APR 都用它取代核心版約束 |
+
+產出：`runs/pad/<DESIGN>_chip.v`、`io_pad_sim.v`、`pad_plan.tcl`　　成功標記：`PAD_PASS`
+
+```bash
+bash scripts/run_stage.sh pad
+```
+
+---
+
+### 1. RTL 模擬 — VCS
+
+確認你寫的 RTL 功能正確，之後每一步都要和這個結果一致。
+
+| 檔案 | 做什麼 |
+|---|---|
+| `run_rtl_sim.sh` | 用 VCS 編譯 tb＋RTL 並執行，檢查 tb 印出成功字串。有 PAD 時改模擬晶片外殼＋帶延遲的 PAD model；可用 `SIM_CASES` 讓同一個 tb 用不同 define 跑多次 |
+
+成功標記：`ALL PASS`
+
+```bash
+cd runs/rtl_sim && bash ../../scripts/run_rtl_sim.sh
+```
+
+---
+
+### 2. 邏輯合成 — Design Compiler
+
+把 RTL 換成標準元件（AND、OR、正反器…）組成的 gate-level netlist。
+
+| 檔案 | 做什麼 |
+|---|---|
+| `dc_syn.tcl` | 主腳本：設定 library → 讀 RTL → 套時序約束 → compile → 報告 → 寫出 netlist 等檔案 → 檢查沒有時序與設計規則違規 |
+| `constraints_saed32.sdc` | SAED32 用的時序約束：時脈、輸入／輸出延遲、負載（單位 ns、fF） |
+| `constraints.sdc` | CBDK_IC_Contest 用的時序約束（比賽原題風格，單位 ns、pF） |
+
+產出：`<top>_syn.v`（netlist）、`.ddc`、`.sdc`、`.sdf`、`.svf`（給 Formality）　　成功標記：`DC_PASS`
+
+```bash
+cd runs/synthesis && dc_shell -f ../../scripts/dc_syn.tcl
+```
+
+---
+
+### 3. 等價驗證 — Formality
+
+不跑模擬，用數學方法證明合成出來的 netlist 和 RTL 功能完全相同。
+
+| 檔案 | 做什麼 |
+|---|---|
+| `fm_rtl2gate.tcl` | 讀 RTL（reference）和合成 netlist（implementation），用 DC 留下的 `.svf` 對上兩邊的名字，逐一比對 |
+
+成功標記：`FM_PASS`
+
+```bash
+cd runs/formality && fm_shell -f ../../scripts/fm_rtl2gate.tcl
+```
+
+---
+
+### 4. 佈局前 STA — PrimeTime
+
+在 slow／typical／fast 三個 corner 計算每條路徑的時間餘裕（slack），確認時序來得及。
+
+| 檔案 | 做什麼 |
+|---|---|
+| `pt_prelayout.tcl` | 讀 netlist 和約束，報告 setup／hold slack 與違規；同時寫出該 corner 的 SDF（每顆元件的延遲），給下一步閘級模擬用。每個 corner 跑一次 |
+
+產出：`<DESIGN>_<corner>.sdf`　　成功標記：`STA_PASS slow`（typical、fast 同理）
+
+```bash
+cd runs/sta
+for c in slow typical fast; do FLOW_CORNER=$c pt_shell -f ../../scripts/pt_prelayout.tcl > console_$c.log; done
+```
+
+---
+
+### 5. 閘級模擬 — VCS
+
+用合成後的 netlist 加上每顆元件的真實延遲（SDF），再跑一次 testbench。比賽通常評到這一步。
+
+| 檔案 | 做什麼 |
+|---|---|
+| `run_gate_sim.sh` | 用 VCS 模擬 netlist＋SDF，檢查功能 PASS、SDF 全部註入成功、沒有時序違規。設 `POSTROUTE=1` 時改用繞線後的 netlist 和 SDF（第 9 步） |
+
+成功標記：`GATE_SIM_PASS`
+
+```bash
+cd runs/gate_sim && bash ../../scripts/run_gate_sim.sh
+```
+
+---
+
+### 6. APR（擺放與繞線）— IC Compiler II
+
+把 netlist 裡的元件擺到晶片上、長時脈樹、用金屬線連起來，最後輸出版圖。分成五個腳本：
+
+| 檔案 | 做什麼 | 在哪跑 | 成功標記 |
+|---|---|---|---|
+| `build_ndm.tcl` | 把標準元件的時序檔（.db）和外框檔（LEF）打包成 ICC2 用的 library（NDM） | `runs/ndm`，用 `icc2_lm_shell` | `NDM_PASS` |
+| `apr_core.tcl` | 主流程：floorplan → 電源網路 → 擺放 → 時脈樹（CTS）→ 繞線。每一步存一個 block，出錯可從上一步重來 | `runs/apr` | `APR_ROUTED` |
+| `apr_pad_ring.tcl` | 有 PAD 時由 `apr_core.tcl` 自動呼叫：算 die 大小、擺 PAD 和角落元件、把 PAD 電源接到核心電源環。不用單獨執行 | — | — |
+| `apr_eco.tcl` | 讀報告找出推不動負載的訊號（max_cap／max_transition 違規），自動插 buffer 修好 | `runs/apr` | `APR_PASS` |
+| `apr_finish.tcl` | 補 filler 元件，寫出 GDS 版圖、兩份 netlist（`routed.v` 給時序、`routed_pg.v` 含電源給 LVS）、DEF | `runs/finish` | `FINISH_PASS` |
+
+```bash
+cd runs/ndm    && icc2_lm_shell -f ../../scripts/build_ndm.tcl && cd ../..
+cd runs/apr    && icc2_shell -f ../../scripts/apr_core.tcl   && cd ../..
+cd runs/apr    && icc2_shell -f ../../scripts/apr_eco.tcl    && cd ../..
+cd runs/finish && icc2_shell -f ../../scripts/apr_finish.tcl && cd ../..
+```
+
+產出：`runs/apr/routed_full.gds`、`routed.v`、`routed_pg.v`
+
+---
+
+### 7. DRC／LVS — IC Validator
+
+檢查版圖能不能被工廠做出來（DRC），以及版圖接出來的電路和 netlist 是否一致（LVS）。
+
+| 檔案 | 做什麼 |
+|---|---|
+| `run_icv_drc.sh` | 用製程的 DRC 規則檢查整張 GDS，結果要 `CLEAN` |
+| `drc_pad_classify.py` | 有 PAD 時由上面自動呼叫：把錯誤分成「PAD library 本身的」和「你的電路的」，只有前者就記為 `PAD_LIMITED` |
+| `apr_drc_patch.tcl` | **修正回圈**：DRC 抓到 M1 金屬太細的小錯時，在 ICC2 裡自動補金屬。跑完要重跑 `apr_finish.tcl` 和 DRC |
+| `run_icv_lvs.sh` | 把 netlist 轉成電晶體層級電路，和版圖萃取出的電晶體逐一比對 |
+| `make_lvs_runset.sh` | 由上面自動呼叫：複製製程的 LVS 規則檔，改掉幾個不相容的地方（原檔不動） |
+| `lvs_pad_classify.py` | 有 PAD 且 LVS 失敗時自動呼叫：確認不一致只在電源網路和 PAD 裡，就記為 `PAD_LIMITED` |
+
+成功標記：DRC `DRC_PASS`、LVS `LVS_PASS`（有 PAD 時最多到 `DRC_PAD_LIMITED`、`LVS_PAD_LIMITED`）
+
+```bash
+cd runs/drc && bash ../../scripts/run_icv_drc.sh && cd ../..
+cd runs/lvs && bash ../../scripts/run_icv_lvs.sh && cd ../..
+# DRC 有 M1 細條錯誤時：
+cd runs/apr && icc2_shell -f ../../scripts/apr_drc_patch.tcl && cd ../..   # 成功：DRC_PATCH_PASS，再重跑 finish 和 DRC
+```
+
+---
+
+### 8. 寄生萃取 — StarRC
+
+從版圖算出每條金屬線真正的電阻和電容，給繞線後的時序分析用。
+
+| 檔案 | 做什麼 |
+|---|---|
+| `run_starrc.sh` | 對三個 RC corner（Cmax／nominal／Cmin，對應 slow／typical／fast）各寫一份 SPEF |
+
+成功標記：`STARRC_PASS`
+
+```bash
+cd runs/starrc && bash ../../scripts/run_starrc.sh
+```
+
+---
+
+### 9. 繞線後驗證 — PrimeTime、Formality、VCS
+
+用真實的線延遲，把時序、等價、模擬再驗一次。
+
+| 檔案 | 工具 | 做什麼 | 成功標記 |
+|---|---|---|---|
+| `pt_postroute.tcl` | PrimeTime | 讀繞線後 netlist＋SPEF，用真的時脈樹重算 slack；寫出繞線後 SDF。每個 corner 跑一次 | `POSTROUTE_STA_PASS slow` 等 |
+| `apr_signoff_eco.tcl` | IC Compiler II | **修正回圈**：上一步還有小幅違規時，自動把元件換大一號或插 buffer。跑完要依序重跑 finish → DRC → LVS → StarRC → 繞線後 STA | `SIGNOFF_ECO_PASS` |
+| `fm_postroute.tcl` | Formality | 證明繞線後的 netlist（多了時脈樹和 ECO 插的 buffer）仍和 RTL 相同 | `FM_POST_PASS` |
+| `run_gate_sim.sh` | VCS | 和第 5 步同一支，設 `POSTROUTE=1` 改用繞線後 netlist＋SDF | `GATE_SIM_PASS` |
+
+```bash
+cd runs/pt_post
+for c in slow typical fast; do FLOW_CORNER=$c pt_shell -f ../../scripts/pt_postroute.tcl > console_$c.log; done
+cd ../..
+cd runs/fm_post   && fm_shell -f ../../scripts/fm_postroute.tcl     && cd ../..
+cd runs/gate_post && POSTROUTE=1 bash ../../scripts/run_gate_sim.sh && cd ../..
+# 繞線後 STA 有違規時：
+cd runs/apr && icc2_shell -f ../../scripts/apr_signoff_eco.tcl && cd ../..
+```
 
 ---
 
@@ -394,7 +543,7 @@ IC_flow_skill/
 │   │   └── glossary.md              縮寫對照（全名＋白話）
 │   └── templates/                   公版腳本，會被複製到你專案的 scripts/
 │       ├── 00_common/               總設定 flow_config.tcl、run_stage.sh、run_all.sh、流程表格
-│       ├── 01_rtl_sim/ … 07_signoff/  各階段腳本
+│       ├── 01_rtl_sim/ … 07_signoff/  各階段腳本（每個檔案的用途見「每個階段用哪些腳本」）
 ├── examples/                        兩個跑完的 demo（無 PAD／有 PAD）
 ├── hooks/  types/                   /ic_flow 面板的程式（Claude Code plugin，選用）
 └── .claude-plugin/                  Claude Code plugin 安裝設定（選用）
