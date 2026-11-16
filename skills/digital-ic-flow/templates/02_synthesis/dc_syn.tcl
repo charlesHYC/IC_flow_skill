@@ -64,12 +64,25 @@ if {$PROCESS eq "cbdk"} {
         if {$cap ne "" && $cap > 0} {set_attribute $pin max_capacitance [expr {0.85*$cap}]}
     }
 } else {
-    set_operating_conditions [string map {saed32rvt_ ""} $LIB_FAST] -library $LIB_FAST
+    # setup（max）用 FF 分析，hold／removal（min）用 SS 分析：非同步 reset 的 removal 時間
+    # 在 SS 最大，只用 FF 修 hold 時 PT slow corner 會出現 removal 違規
+    # （REFRACT 實測：RST 只過一個反相器到 RSTB，slow -0.20 ns、typical -0.10 ns，609 個 DFF）
+    set_operating_conditions -max [string map {saed32rvt_ ""} $LIB_FAST] -max_library $LIB_FAST \
+                             -min [string map {saed32rvt_ ""} $LIB_SLOW] -min_library $LIB_SLOW
     # wire-load 一律取 SS library 的 ForQA，mode top（整個設計用同一個模型）
     set_wire_load_model -name $WLM -library $LIB_SLOW
     set_wire_load_mode top
     source [file join [file dirname [info script]] $SDC_FILE]
     # 跨 corner 電容與驅動餘裕：排除最小的 X0/X1 cell、限制加權扇出
+    # max_capacitance 只在 DC 記憶體內收緊到 85%（PDK 檔案不動）：PT 檢查時 pin 電容取
+    # rise/fall 範圍的上限，DC 用標稱值，邊緣的 net 在 DC 過、PT 不過
+    # （REFRACT 實測：DC 15.99 fF、PT 17.62 fF，上限 16 fF，84 個 pin）
+    foreach lib [list $LIB_FAST $LIB_SLOW] {
+        foreach_in_collection pin [get_lib_pins $lib/*/*] {
+            set cap [get_attribute -quiet $pin max_capacitance]
+            if {$cap ne "" && $cap > 0} {set_attribute $pin max_capacitance [expr {0.85*$cap}]}
+        }
+    }
     set_dont_use [get_lib_cells [list $LIB_FAST/*X0_RVT $LIB_FAST/*X1_RVT]]
     # 加權扇出上限是設計相依的餘裕設定（geofence 用 1.0）；REFRACT 這類大型 datapath 達不到，預設不設
     if {[info exists MAX_FANOUT] && $MAX_FANOUT ne ""} {set_max_fanout $MAX_FANOUT [current_design]}
@@ -85,6 +98,11 @@ if {$USE_PAD} {
     set_dont_touch $bond_nets
     set_resistance 0 $bond_nets
 }
+# 非同步 reset 的 recovery／removal 檢查：DC 預設不分析（PT 預設會），不打開的話
+# DC 看不到 reset 路徑，不會幫高扇出的 reset 建 buffer tree，也不修 removal；
+# 到佈局前 STA 才失敗（REFRACT 實測：約 600 個 DFF 的 RST 只有一顆 INVX8 推，
+# fast corner recovery -3.26 ns，slow removal -0.20 ns）
+set_app_var enable_recovery_removal_arcs true
 set_fix_hold [get_clocks $CLK_PORT]
 # 同一 net 接多個 output port 或常數時插 buffer，避免 netlist 出現 assign
 set_fix_multiple_port_nets -all -buffer_constants [get_designs *]

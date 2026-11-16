@@ -4,6 +4,8 @@
 
 ## 環境與工具啟動
 
+- **階段被中斷（Ctrl-C、kill），`status.txt` 卻寫 PASS** → bash 收到 SIGTERM 時，`EXIT` trap 讀到的 `$?` 可能是 0。`run_stage.sh` 另外攔 TERM／INT／HUP，被中斷一律記 FAIL（REFRACT 實測：Formality 被 kill、報告是空的，舊版仍記 PASS）。
+
 - **Formality／LC／ICV 啟動就 crash：`symbol lookup error: /lib64/libkrb5.so.3: undefined symbol krb5int_c_deprecated_enctype`**
   → 工具自帶的 libk5crypto 與系統 libkrb5 版本不合。
   → `LD_PRELOAD=/lib64/libk5crypto.so.3`（Formality／LC）或 `LD_PRELOAD=/usr/lib64/libkrb5support.so.0`（ICV、Verdi）。不要修改安裝目錄。
@@ -21,7 +23,9 @@
 - **SAED32 上 1 pF 輸出負載怎樣都修不掉** → 核心 cell 最大 max_capacitance 是 168 fF（NBUFFX32_RVT）。無 PAD 核心改用 20～50 fF；1 pF 應放在晶片 port，由 output PAD 驅動。
 - **SAED32：DC 乾淨，PT fast corner 卻大負 slack（單一 gate 延遲 7～9 ns）** → FF library 的 wire-load RC 在高扇出 net 上暴增。只對 SS library 合成時，DC 看不到這個問題。照 geofence 的做法：target 用 FF library、link 同時放 SS 與 FF、wire-load 用 SS 的 `ForQA`（mode top）、`set_dont_use *X0_RVT *X1_RVT`、`set_max_fanout 1.0`。（skill smoke test 實測：只用 SS target 時 fast setup 為 −6.5～−15.5 ns）
 - **PT 報 `SEL-005 Nothing matched for lib_spec` 在 set_wire_load_model** → wire-load 模型所在的 library（SS）沒放進 link_path。把它加在 link_path 最後面，不要排序：PT 會把 cell 連到 link_path 第一個符合的 library，排序後 typical corner 會被連到 SS（兩個 corner 的數字會完全一樣，這就是徵兆）。
-- **DC constraint 乾淨，PT 仍有 max_capacitance 違規** → 兩個工具不同 corner 的負載估計有差異。SAED32 用上一條的設定；CBDK 在 DC 記憶體內把 max_capacitance 收緊到 85%。
+- **DC constraint 乾淨，PT 仍有 max_capacitance 違規（差一點點，例如 16.99 fF > 16 fF）** → PT 檢查時 pin 電容取 rise/fall 範圍的上限，DC 用標稱值（REFRACT 實測：同一條 net DC 15.99 fF、PT 17.62 fF，84 個 pin）。公版在 DC 記憶體內把 max_capacitance 收緊到 85%（SAED32 與 CBDK 都做，PDK 檔案不動）。
+- **PT 報非同步 reset 的 recovery／removal 違規，DC 報告卻完全沒有** → DC 預設不分析 recovery／removal（`enable_recovery_removal_arcs` 是 false），看不到 reset 路徑，也不會幫高扇出的 reset 建 buffer tree。REFRACT 實測：約 600 個 DFF 的 `RST` 只有一顆 INVX8 推，fast corner recovery −3.26 ns。公版已 `set_app_var enable_recovery_removal_arcs true`。
+- **打開 recovery／removal 後，PT slow／typical 仍有 removal 違規** → DC 用 FF library 修 hold，但 removal 時間在 SS 最大（REFRACT：`RST` 只過一個反相器到 `RSTB`，slow −0.20 ns，609 個 DFF）。公版改成 `set_operating_conditions -max <FF> -max_library <FF> -min <SS> -min_library <SS>`：setup 用 FF、hold／removal 用 SS 分析。REFRACT 面積 17375 → 19844（+14%，多半是 reset 路徑的延遲 buffer）。
 - **reg-to-reg 差一點點（例如 −0.002 ns）** → `report_timing -significant_digits 4` 確認，再做 `compile_ultra -incremental`，或加強 `group_path -weight`。
 
 ## 等價驗證（Formality）
@@ -34,6 +38,7 @@
 
 - **`SDFCOM_CFTC Cannot find timing check $removal(posedge RSTB,posedge CLK)`（DFFARX*）** → 同一個原因：cell model 沒有 removal check。這是 warning，不影響功能結果，但 reset 的 removal 時序只有 STA 有檢查。`run_gate_sim.sh` 只容許這一種，其餘 SDF warning（包括 PAD 上的 `SDFCOM_IANE`）都判失敗。舊版公版只檢查 error，所以這 17 個 warning 一直沒被注意到（2026-11-12 發現）。
 - **SAED32 SDF 有 `REMOVAL`，VCS 報 annotation 錯誤** → 舊版 SAED cell model 把 removal 寫成 clock-to-reset 的 HOLD。只在**模擬副本**把 `(REMOVAL …)` 改成 `(HOLD …)`，並做反向比對，確認只改這一處。原始 SDF 要保留。（geofence `scripts/saed32/gate.py`）
+- **`SDFCOM_IWSBA` INTERCONNECT will still be annotated（只在繞線後 SDF）** → 保留 DesignWare 階層時（例如 REFRACT 的 `sub_97_2`），跨階層的 INTERCONNECT 會被提醒，VCS 明講延遲仍會註入，不是漏註入。`run_gate_sim.sh` 已列為已知 warning。
 - **TFIPC 警告** → 多半是 DFF 未使用的 QN 輸出沒接，不是輸入沒接，列入說明即可。
 - **官方 tb gate-level 取樣太早而失敗** → 檢查 tb 的取樣時間是否在 clock-to-Q 加輸出延遲之後；修改 tb 時只改模擬副本，並說明理由。
 
@@ -41,6 +46,9 @@
 
 - **CTS 後 clock 沒有 buffer** → 合成留下的 `set_dont_touch_network`／ideal network 沒解除。CTS 前要 `set_dont_touch_network -clear [all_clocks]`、`remove_ideal_network`。
 - **I/O path 時序與 PT 對不上** → ICC2 預設會在 input delay 加上 clock network latency。加 `-network_latency_included`。
+- **APR 的 I/O 約束比 signoff 鬆，繞線後 PT 才出現大量 hold／removal 違規** → APR 的每個 I/O delay 只能比 SDC 嚴。REFRACT 實測：`apr_core.tcl` CTS 後的 input min delay 原本是 0.2（SDC 是 0），ICC2 以為 `RST` 晚 0.2 ns 才到、沒修 removal，繞線後 PT fast corner 619 個 removal 違規（−0.07 ns）。公版已改成 0。
+- **`route_opt` 後還剩少數 short／spacing，增量 `route_detail` 也清不掉** → cell 剛好在 M6 電源條正下方，電源條往下的 via stack 佔掉 M2／M3 走線空間，訊號線短到 VSS（REFRACT 實測 3 個）。`apr_core.tcl` 的修正回圈：先拆有違規的 net 重繞，還在的把相連的 cell 往右移 2 um、legalize 後再重繞。重繞時 clock net 也要包含，否則移過 DFF 後 clock 會斷開（實測 open net 1）。
+- **重跑 APR 立刻失敗：`Library directory … already exists (LIB-009)`** → 上一次的 design library 還在。`apr_core.tcl` 已在 `create_lib` 前 `file delete -force $NDM_LIB`。
 - **`save_block -as X` 之後還在改舊 block** → `save_block -as` 不會切換 current block，要再 `open_block X`。
 - **report_timing 列出所有 scenario** → 加 `-scenarios [get_scenarios functional_ss]`。
 - **LVS：VDD 斷成數十個 layout net（"open layout net"），`check_pg_connectivity` 顯示 floating wires** → `compile_pg` 只在 ring 與 mesh 的交點放 via，M1 rail 到 M6/M7/M8 的 via 要自己補：`create_pg_vias -nets {VDD VSS} -from_layers M1 -to_layers M6 -via_masters {VIA12SQ_C … VIA56SQ_C}`，M6→M7、M7→M8 也一樣。（skill smoke test 實測：沒補時只有 49 個 PG via；REFRACT 補完約 1550 個）

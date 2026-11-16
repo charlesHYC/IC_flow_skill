@@ -141,6 +141,8 @@ references/
 - 後段：APR（ECO 6 個 buffer）、drc_patch 補 4 個、signoff_eco 1 輪；繞線後 setup +22.88/+25.94/+26.72 ns，hold +0.073/+0.072/+0.016 ns；繞線後 Formality、SDF 模擬 PASS。
 - `PAD_LIMITED`（**不是 PASS**）：DRC 核心區 0 個錯誤，IO ring 內 2120 個（library 本身的 GDS），PAD 端接線補丁 4 個 M5.S.3.3（LEF/GDS 不一致）。LVS：所有 MOS／電阻都對上，PAD 內 ESD 二極體沒被萃取，IO ring 在 layout 裡把 VDD/VSS/VDDIO/VSSIO 與輸入 port 併成同一個 net（拿掉接線也一樣，是 IO library 的問題）。電源 PAD 的打線 terminal 浮接。
 
+2026-11-16 用 REFRACT（SAED32、50 ns、RTL 較大，約 600 個帶非同步 reset 的 DFF）以本公版跑 **`USE_PAD 0`**：`ALL_STAGES_PASS`。這次測試修了 7 個公版問題（見 `references/pitfalls.md`：中斷誤判 PASS、DC 的 recovery／removal 與 hold corner、max_cap 收緊、APR 繞線修正回圈、APR 重跑 LIB-009、APR input min delay 比 SDC 鬆、跨階層 SDF INTERCONNECT）。面積 19843.6；繞線後 setup slow／typ／fast = +36.01／+42.02／+45.65 ns，hold +0.228／+0.085／+0.003 ns；DRC CLEAN（drc_patch）、電晶體層級 LVS PASS、signoff_eco 1 輪、繞線後 Formality 與 28 次 SDF 模擬 PASS。**這些修改還沒有用 geofence 重新回歸測試**，REFRACT 的 `USE_PAD 1` 也還沒用新版跑完。
+
 尚未實測：`PROCESS cbdk` 分支（沿用 geofence 原 CBDK 腳本的設定，但沒有用本公版重跑過）、bidirectional PAD（`pad_tools.py` 遇到 inout port 會直接報錯）、`io_std` 以外的 IO library。
 
 來源：geofence（`IC_contest_geofence/geofence_practice/scripts/{,saed32,apr}`）提供 1–6 階段；geofence 的全晶片 DRC/LVS/PEX 因 IO library 不一致未完成，7–9 階段改採 REFRACT（`IC_contest_prelimily_grad/work_saed32/scripts`）已通過驗收的腳本。

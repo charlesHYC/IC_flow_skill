@@ -27,11 +27,13 @@ cd "$out"
 
 # 流程表格／/ic_flow 面板用：每個階段寫 status.txt（RUNNING → PASS／FAIL／PAD_LIMITED／SKIP），
 # 並在 runs/stage_history.log 記一筆；結束後把專案登記到 /ic_flow 的歷史
-t0=$(date +%s); SKIPPED=0
+t0=$(date +%s); SKIPPED=0; KILLED=0
 echo "RUNNING $t0" > "$out/status.txt"
 record() {
   rc=$?; res=FAIL
-  if [ "$SKIPPED" = 1 ]; then res=SKIP
+  # 被中斷（Ctrl-C、kill）時一律記 FAIL：此時 $? 可能是 0，不能拿來判斷
+  if [ "$KILLED" = 1 ]; then res=FAIL; echo "$stage INTERRUPTED" >&2
+  elif [ "$SKIPPED" = 1 ]; then res=SKIP
   elif [ $rc = 0 ]; then
     res=PASS
     grep -qs '^[A-Z]*_PAD_LIMITED' "$out/console.log" && res=PAD_LIMITED
@@ -42,6 +44,7 @@ record() {
   python3 "$S/flow_dashboard.py" "$PROJ" > /dev/null 2>&1 || true
 }
 trap record EXIT
+trap 'KILLED=1; exit 143' TERM INT HUP
 
 # bash 階段：同時印到螢幕與 console.log，讓最後的成功標記檢查找得到
 # 工具失敗（exit 1）時不能讓 set -e 直接結束：要走到最後的標記檢查，印出 FAIL 訊息

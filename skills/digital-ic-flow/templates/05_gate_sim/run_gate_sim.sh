@@ -54,13 +54,17 @@ run_case() {   # $1 = case（"default" 或 define，例 RI=5）$2 = delay（max/
   # SDF 必須完整註入，且不能有 timing check 違規
   grep -Eq 'Total errors:\s+0' compile.log run.log || { echo "SDF annotation errors"; return 1; }
   ! grep -Eiq 'timing violation|\$setuphold|\$recrem|\$width|Error-\[' run.log || return 1
-  # SDF warning 逐一分類，只容許已知的一種，其他一律失敗：
+  # SDF warning 逐一分類，只容許已知的兩種，其他一律失敗：
   #   SDFCOM_CFTC $removal：SAED32 cell model 沒有 removal check（見 pitfalls，geofence 每次 17 個）
+  #   SDFCOM_IWSBA：跨階層的 INTERCONNECT（保留 DesignWare 階層時才有，例 REFRACT 的 sub_97_2），
+  #                 VCS 明講「delay will still be annotated」，不是漏註入
   # PAD 的 IOPATH 必須註入成功（PAD model 有 specify），所以 PAD 上的 SDFCOM_IANE 也算失敗
   awk '/^Warning-\[SDFCOM/{w=$0; getline; getline m; getline d; print w "|" m "|" d}' compile.log > sdf_warnings.txt
   n_rem=$(grep -c 'SDFCOM_CFTC.*removal' sdf_warnings.txt || true)
+  n_ic=$(grep -c 'SDFCOM_IWSBA' sdf_warnings.txt || true)
   n_all=$(wc -l < sdf_warnings.txt)
-  [ "$n_all" = "$n_rem" ] || { echo "unexpected SDF warnings: $((n_all - n_rem))"; return 1; }
+  [ "$n_all" = "$((n_rem + n_ic))" ] || { echo "unexpected SDF warnings: $((n_all - n_rem - n_ic))"; return 1; }
+  [ "$n_ic" = 0 ] || echo "SDF_NOTE: cross-hierarchy INTERCONNECT annotated anyway: $n_ic"
   echo "$n_rem" > removal_count
 }
 

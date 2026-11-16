@@ -23,6 +23,8 @@ set SDC [expr {$USE_PAD ? "constraints_chip.sdc" : "constraints_saed32.sdc"}]
 # ===== 1. 建立 design library 並讀 netlist =====
 set refs [list $APR_DIR/libs/stdcell_rvt.ndm]
 if {$USE_PAD} {lappend refs $APR_DIR/libs/io.ndm}
+# 重跑 APR 時先刪掉上一次的 design library，否則 create_lib 報 LIB-009（已存在）
+file delete -force $NDM_LIB
 create_lib $NDM_LIB -technology $TECH_TF -ref_libs $refs
 # USE_PAD=1：合成 netlist 已經是晶片 top（wrapper＋PAD 實例＋核心）
 read_verilog -top $TOP $NETLIST
@@ -151,11 +153,14 @@ foreach_in_collection s [all_scenarios] {
     current_scenario $s
     set_dont_touch_network -clear [all_clocks]
     remove_ideal_network [get_ports $CLK_PORT]
-    # I/O delay 以 root clock 為參考，跟 PrimeTime 的語意一致
+    # I/O delay 以 root clock 為參考，跟 PrimeTime 的語意一致。
+    # 每個值都只能比 signoff 的 SDC 嚴、不能比它鬆：input min 必須 <= SDC 的 -min（官方 0）。
+    # REFRACT 實測：這裡原本是 0.2，ICC2 以為 RST 晚 0.2 ns 才到，沒修 removal；
+    # 繞線後 PT 用 SDC 的 0 檢查，619 個 DFF removal 違規（fast -0.07 ns）。
     set io [remove_from_collection [all_inputs] [get_ports [concat $CLK_PORT $PG_NETS]]]
     set oo [remove_from_collection [all_outputs] [get_ports $PG_NETS]]
     set_input_delay  -max 2.0 -network_latency_included -clock $CLK_PORT $io
-    set_input_delay  -min 0.2 -network_latency_included -clock $CLK_PORT $io
+    set_input_delay  -min 0.0 -network_latency_included -clock $CLK_PORT $io
     set_output_delay -max 2.0 -network_latency_included -clock $CLK_PORT $oo
     set_output_delay -min 0.2 -network_latency_included -clock $CLK_PORT $oo
     set_max_transition 0.25 -clock_path [all_clocks]
@@ -170,6 +175,46 @@ save_block -as cts
 # ===== 7. Route =====
 route_auto
 route_opt
+# route_opt 的 ECO route 有迭代上限，可能留下少數 short／spacing（REFRACT 實測 3 個，
+# 訊號線在 M6 電源條下方的 via stack 旁短到 VSS，增量 route_detail 也清不掉）。
+# 修正回圈：第 1 輪拆掉有違規的 net 重繞；之後還在的，把相連的 cell 往右移 2 um
+# 離開電源條、legalize 後再重繞（DRC 與 open net 都要是 0）。最多 4 輪，結果仍由下面的 check_routes 判定。
+proc route_drc_nets {} {
+    redirect -variable r {check_routes}
+    if {![regexp {Total number of DRCs = (\d+)} $r -> n]} {set n -1}
+    if {![regexp {Total number of open nets = (\d+)} $r -> o]} {set o -1}
+    set nets {}
+    if {$n > 0} {
+        open_drc_error_data zroute.err
+        foreach_in_collection e [get_drc_errors -error_data zroute.err] {
+            foreach x [get_object_name [get_attribute -quiet $e objects]] {
+                if {$x ni $::PG_NETS && $x ni $nets} {lappend nets $x}
+            }
+        }
+    }
+    return [list $n $o $nets]
+}
+for {set i 1} {$i <= 4} {incr i} {
+    lassign [route_drc_nets] n o nets
+    puts "ROUTE_FIX iter $i DRCs=$n open=$o nets={$nets}"
+    if {$n == 0 && $o == 0} break
+    if {$nets eq ""} {route_eco; route_detail -incremental true -initial_drc_from_input true; continue}
+    set nets [get_nets $nets]
+    if {$i >= 2} {
+        set cells [filter_collection [get_cells -of [get_pins -of $nets]] "is_hard_macro==false && physical_status!=fixed"]
+        foreach_in_collection c $cells {
+            lassign [lindex [get_attribute $c boundary_bbox] 0] x y
+            set_cell_location -coordinates [list [expr {$x + 2.0}] $y] $c
+        }
+        legalize_placement -cells $cells
+        set nets [add_to_collection -unique $nets [get_nets -of [get_pins -of $cells]]]
+        # 移過的 cell 上所有非電源的 net 都要重繞（包括 clock net；只挑 signal 會讓 clock 斷開）
+        set nets [filter_collection $nets "net_type!=power && net_type!=ground"]
+    }
+    remove_routes -nets $nets -detail_route -global_route
+    route_eco -nets $nets
+    route_detail -incremental true -initial_drc_from_input true
+}
 foreach net $PG_NETS {connect_pg_net -net $net [get_pins -hierarchical */$net]}
 redirect routed_qor.rpt   {report_qor}
 redirect routes.rpt       {check_routes}
