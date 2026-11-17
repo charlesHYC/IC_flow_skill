@@ -187,7 +187,7 @@ SAED32 的這幾份資料彼此有幾處不一致，所以流程先用 `fix_io_l
 | 核心電源 | `VDD`、`VSS` | 核心 1.05 V 電源；手冊標每顆 40 mA |
 | IO 電源 | `IOVDD`、`IOVSS` | PAD 自己的 2.5 V 電源；每顆 40 mA |
 | 類比 | `A1825`、`AR1825`、`AVDD`、`AVSS` | 類比訊號與類比電源 |
-| 角落 | `CORNER`、`CAPCORNER` | 四個角，見 11.8 |
+| 角落 | `CORNER`、`CAPCORNER` | 四個角，見 11.9 |
 | 填空 | `FILLER`、`FILLER01`～`FILLER50` | PAD 之間的空位；數字是寬度（µm），讓電源環連續 |
 | 斷開 | `BREAKCORE`（只留 IO 電源）、`BREAKIO`（只留核心電源） | 要把電源環切成好幾段時 |
 | 去耦電容 | `CVDDVSS`、`CIOVDDIOVSS` | 放在 PAD ring 裡多加穩壓電容（約 70 pF） |
