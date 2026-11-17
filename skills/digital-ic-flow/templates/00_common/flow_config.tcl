@@ -26,11 +26,11 @@ set OUT_DELAY_MIN  0.0           ;# ← output 的 hold 要求
 
 # ---- 要不要上 PAD：0 = 只做核心（core-only），1 = 加 IO PAD 做全晶片 ----
 # **設計一開始就要決定**（開專案、寫 RTL 之前先問使用者）：PAD 的延遲會影響 RTL 模擬、
-# 合成、STA 與閘級模擬，不是 APR 才加的東西。環境變數 USE_PAD 可暫時覆蓋。
+# 合成、STA 與 Gate-level sim，不是 APR 才加的東西。環境變數 USE_PAD 可暫時覆蓋。
 # USE_PAD=1 時從第 0 步（pad 階段）就改用晶片 top ${DESIGN}_chip：
 #   pad      從 RTL port 產生 wrapper，並從 IO library 查出 PAD 延遲，產生帶 specify 的 PAD model
 #   rtl_sim  模擬 wrapper＋RTL＋PAD model，PAD 延遲已經在裡面
-#   合成／Formality／STA／閘級模擬／APR／signoff 都以 ${DESIGN}_chip 為 top，1 pF 板級負載
+#   合成／Formality／STA／Gate-level sim／APR／signoff 都以 ${DESIGN}_chip 為 top，1 pF 板級負載
 # SAED32 io_std 原檔有 GDS／CDL／LEF 錯誤，pad 階段的 fix_io_lib.py 會產生修正版（runs/iofix/），
 # 之後的 APR、DRC、LVS 都用修正版；DRC／LVS 的判定和核心一樣，CLEAN／PASS 才算過。
 set USE_PAD 0

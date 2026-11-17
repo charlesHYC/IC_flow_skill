@@ -2,7 +2,7 @@
 //   build    由左到右一欄一欄「組裝」出來，組完停一下再重來
 //   scan     一條亮柱由左掃到右（STA：訊號沿路徑傳）
 //   magnify  圓形放大鏡在晶片上左右來回掃（DRC）
-//   wave     波形往左捲動（RTL／閘級模擬）
+//   wave     波形往左捲動（RTL／Gate-level sim）
 //   blink    整張圖閃爍（全部完成／失敗）
 
 export type Anim = {
@@ -25,7 +25,7 @@ export const ANIMS: Record<string, Anim> = {
   synthesis: { mode: 'build', caption: '把 RTL 組成 DFF 與邏輯閘…', art: [" a ──┐  ┌────┐     ┌───────┐", "     ├──┤ &  ├─────┤D     Q├────┐", " b ──┘  └────┘     │  DFF  │    │   ┌────┐", "                   │>      │    └───┤    │", " c ──┐  ┌────┐     └───────┘        │ ⊕  ├── out", "     ├──┤ ≥1 ├──────────────────────┤    │", " d ──┘  └────┘                      └────┘"] },
   formality: { mode: 'build', caption: '逐一比對 compare point：RTL ≡ netlist', art: ["   RTL                 NETLIST", " ┌──────────┐       ┌────┐ ┌────┐ ┌────┐", " │ always @ │  ≡≡≡  │ &  │ │ ≥1 │ │ FF │", " │ if/else  │       └────┘ └────┘ └────┘", " └──────────┘", " compare points  ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓"] },
   sta: { mode: 'scan', caption: '沿著時序路徑算 slack（三個 corner）…', art: PATH },
-  gate_sim: { mode: 'wave', caption: '閘級模擬：每顆 cell 都帶 SDF 延遲…', art: WAVE },
+  gate_sim: { mode: 'wave', caption: 'Gate-level sim：每顆 cell 都帶 SDF 延遲…', art: WAVE },
   ndm: { mode: 'build', caption: '建 NDM：把 cell 的 LEF 與 timing 包成 library…', art: ["  ┌───────────────────────────┐", "  │ stdcell_rvt.ndm   ▤ ▤ ▤ ▤ │", "  ├───────────────────────────┤", "  │ io.ndm            ▣ ▣ ▣ ▣ │", "  └───────────────────────────┘"] },
   apr: { mode: 'build', caption: 'Placement → CTS → Route：cell 由左到右擺進去…', art: [" ┌───────────────────────────────────┐", " │ ▤ ▤▤▤▤ ▤▤▤▤ ▤ ▤▤ ▤▤▤▤ ▤▤▤▤ ▤▤▤ ▤▤ │", " │═══════════════════════════════════│", " │ ▤▤▤▤ ▤▤▤▤ ▤▤▤▤ ▤▤ ▤▤ ▤▤▤▤ ▤▤ ▤ ▤▤ │", " │═══════════════════════════════════│", " │ ▤▤▤▤ ▤▤▤ ▤▤▤ ▤▤ ▤▤▤▤ ▤ ▤▤▤ ▤▤▤▤ ▤ │", " └───────────────────────────────────┘"] },
   eco: { mode: 'build', caption: '推不動的 net 插 buffer…', art: [" ┌────┐                          ┌────┐", " │ FF ├─────────────┬────────────┤    │", " └────┘             │            └────┘", "                 ┌──┴──┐", "                 │  ▷  │  NBUFFX4", "                 └─────┘"] },

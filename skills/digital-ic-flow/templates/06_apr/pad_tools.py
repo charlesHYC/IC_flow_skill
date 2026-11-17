@@ -16,7 +16,7 @@
         * 延遲從 IO library 的 NLDM 表查（bilinear 內插／外插，和 STA 工具相同算法）
         * 邏輯沿用官方 RECEIVER／DRIVER（編譯時用 -v <IO_MODEL> 引入），PG 在 model 內固定
           為有效（PG 連接由 LVS 檢查，不靠模擬）
-        * 沒有 SDF 時（RTL 模擬）用 specify 的預設值；有 SDF 時（閘級模擬）被 SDF 的
+        * 沒有 SDF 時（RTL 模擬）用 specify 的預設值；有 SDF 時（Gate-level sim）被 SDF 的
           IOPATH 覆蓋，所以 PAD 延遲在 RTL、佈局前、繞線後模擬都看得到
 
   simnet <routed_pg.v> <top> <out.v>

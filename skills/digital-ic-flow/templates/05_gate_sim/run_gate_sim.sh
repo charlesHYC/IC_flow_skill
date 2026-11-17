@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run_gate_sim.sh — 階段 5：閘級模擬（netlist + SDF 延遲）
+# run_gate_sim.sh — 階段 5：Gate-level sim（netlist + SDF 延遲）
 # 比賽 A 級要求：所有 pattern 在 gate-level + SDF 下結果正確。
 # 兩種模式：
 #   （預設）       合成 netlist + 佈局前 SDF（階段 5）

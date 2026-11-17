@@ -17,9 +17,9 @@ description: Digital IC (cell-based) RTL-to-GDS design flow guide with ready-to-
 | 0 | 要不要上 PAD（`USE_PAD`） | `pad_tools.py` | RTL port、IO library | `${DESIGN}_chip.v`、帶延遲的 PAD model | 只有 `USE_PAD 1` 才執行；印出 `PAD_DELAY`、`PAD_PASS` | `templates/06_apr/pad_tools.py`（由 `run_stage.sh pad` 呼叫） |
 | 1 | RTL 模擬 | VCS（Verdi 看波形） | RTL、tb、pattern | log、VCD/FSDB | tb 印出 PASS 標記，mismatch = 0 | `templates/01_rtl_sim/run_rtl_sim.sh` |
 | 2 | 邏輯合成 | Design Compiler | RTL、SDC、.db | netlist .v、.ddc、.sdf、.svf、.sdc | `report_constraint -all_violators` 無時序/DRC 違規、`check_timing` 無 unconstrained | `templates/02_synthesis/dc_syn.tcl` + `constraints.sdc` |
-| 3 | 等價驗證 | Formality | RTL、netlist、SVF | match/verify 報告 | `Verification SUCCEEDED`，failing = 0 | `templates/03_formality/fm_rtl2gate.tcl` |
+| 3 | Function 驗證 | Formality | RTL、netlist、SVF | match/verify 報告 | `Verification SUCCEEDED`，failing = 0 | `templates/03_formality/fm_rtl2gate.tcl` |
 | 4 | 佈局前 STA | PrimeTime | netlist、SDC、多 corner .db | timing 報告、SDF | 每個 corner setup/hold slack ≥ 0、無 VIOLATED | `templates/04_sta/pt_prelayout.tcl` |
-| 5 | 閘級模擬 | VCS + SDF | netlist、SDF、cell model | log | 功能 PASS、SDF annotation 0 error、warning 只能是已知的 `$removal`、無 timing violation | `templates/05_gate_sim/run_gate_sim.sh` |
+| 5 | Gate-level sim | VCS + SDF | netlist、SDF、cell model | log | 功能 PASS、SDF annotation 0 error、warning 只能是已知的 `$removal`、無 timing violation | `templates/05_gate_sim/run_gate_sim.sh` |
 | 6 | APR | IC Compiler II | netlist、NDM、tech、TLU+、SDC | routed block、DEF、SPEF(估計)、GDS | `check_routes` 0 DRC/open/short、`check_pg_connectivity` 無浮接、`report_constraints` 無違規 | `templates/06_apr/*.tcl`（route 後再跑 `apr_eco.tcl` 修剩下的 max_cap/transition） |
 | 7 | 實體驗證 | IC Validator | GDS、CDL、runset | DRC/LVS 結果 | DRC `RESULTS: CLEAN`、LVS `Final comparison result:PASS` | `templates/07_signoff/run_icv_drc.sh`、`run_icv_lvs.sh` |
 | 8 | 寄生萃取 | StarRC | NDM block、nxtgrd | SPEF（每個 RC corner） | SPEF 產生、PT 註入無缺漏 | `templates/07_signoff/run_starrc.sh` |
@@ -29,14 +29,14 @@ description: Digital IC (cell-based) RTL-to-GDS design flow guide with ready-to-
 
 ## 開始前先問：要不要上 PAD？
 
-**開新設計、寫 RTL 或跑第一次模擬之前，就要先問使用者要不要加 IO PAD**，不要自己決定，也不能等到 APR 才問。原因：PAD 有延遲（SAED32 slow corner：input PAD 約 0.4 ns；output PAD 推 1 pF 約 1.2–1.4 ns），輸出負載也從 20 fF 變成 1 pF。這些從 RTL 模擬就會影響結果，包括 tb 的取樣時間、合成的 I/O 時序預算、STA、閘級模擬。答案寫進 `flow_config.tcl` 的 `set USE_PAD 0|1`（也可以臨時用 `USE_PAD=1 bash scripts/run_all.sh` 覆蓋）。問的時候要把差別講清楚：
+**開新設計、寫 RTL 或跑第一次模擬之前，就要先問使用者要不要加 IO PAD**，不要自己決定，也不能等到 APR 才問。原因：PAD 有延遲（SAED32 slow corner：input PAD 約 0.4 ns；output PAD 推 1 pF 約 1.2–1.4 ns），輸出負載也從 20 fF 變成 1 pF。這些從 RTL 模擬就會影響結果，包括 tb 的取樣時間、合成的 I/O 時序預算、STA、Gate-level sim。答案寫進 `flow_config.tcl` 的 `set USE_PAD 0|1`（也可以臨時用 `USE_PAD=1 bash scripts/run_all.sh` 覆蓋）。問的時候要把差別講清楚：
 
 | | `USE_PAD 0`：只做核心（預設） | `USE_PAD 1`：加 PAD 的全晶片 |
 |---|---|---|
 | 從哪一步開始不同 | — | **第 0 步**：`pad` 階段從 RTL port 產生 `${DESIGN}_chip` wrapper，並從 IO library 查出 PAD 延遲，產生帶 specify 的 PAD 模擬 model |
-| 每個階段的 top | `$DESIGN` | `${DESIGN}_chip`（RTL 模擬、合成、Formality、STA、閘級模擬、APR、signoff 全部） |
+| 每個階段的 top | `$DESIGN` | `${DESIGN}_chip`（RTL 模擬、合成、Formality、STA、Gate-level sim、APR、signoff 全部） |
 | RTL 模擬 | 零延遲 | 核心零延遲＋**PAD 延遲**（預設 slow corner 的值） |
-| 合成／STA／閘級模擬 | 核心，20 fF 負載 | 含 PAD，1 pF 板級負載由 output PAD 推（`constraints_chip.sdc`）；SDF 的 PAD 延遲會註入 PAD model |
+| 合成／STA／Gate-level sim | 核心，20 fF 負載 | 含 PAD，1 pF 板級負載由 output PAD 推（`constraints_chip.sdc`）；SDF 的 PAD 延遲會註入 PAD model |
 | die | 依合成面積手動設 `apr_core.tcl` 的 `DIE`（例：cell area 5800 µm² → 240 µm） | 依 PAD 數自動算（例：24 個訊號＋8 個電源 PAD → 920 µm，pad-limited） |
 | 電源 | VDD/VSS | VDD/VSS/VDDIO/VSSIO，電源 PAD 的 M4 電源條自動接到 core ring |
 | DRC／LVS | CLEAN／PASS | CLEAN／PASS，判定和核心一樣。SAED32 io_std 原檔有錯，pad 階段先用 `fix_io_lib.py` 產生修正版 library；LVS 把 VSSIO 併到 VSS（共用基板，見 pitfalls） |

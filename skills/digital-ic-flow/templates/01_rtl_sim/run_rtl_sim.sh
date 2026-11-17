@@ -4,7 +4,7 @@
 # USE_PAD=1：模擬晶片 top（pad 階段產生的 wrapper＋RTL＋帶 specify 延遲的 PAD model），
 #   tb 用副本把 `<DESIGN> u_xxx(` 換成 `<DESIGN>_chip u_xxx(`（port 名稱相同，原 tb 不動）。
 #   PAD 延遲（slow corner，input 約 0.4 ns、output 推 1 pF 約 1.3 ns）因此在 RTL 階段就看得到：
-#   tb 的取樣時間點若太貼近輸出變化，這裡就會失敗，不會等到閘級模擬才發現。
+#   tb 的取樣時間點若太貼近輸出變化，這裡就會失敗，不會等到 Gate-level sim 才發現。
 # SIM_CASES：同一個 tb 要用不同 define 跑好幾次時（例：RI=2..15），每個 case 各自
 #   編譯、執行，放在 run_<case>/，全部 PASS 才算通過。留空 = 只跑一次。
 set -euo pipefail

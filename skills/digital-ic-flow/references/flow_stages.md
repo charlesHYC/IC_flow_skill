@@ -6,9 +6,9 @@
 0. 開始前：要不要上 PAD
 1. RTL 模擬
 2. 邏輯合成（DC）與 SDC
-3. 等價驗證（Formality）
+3. Function 驗證（Formality）
 4. 佈局前 STA（PrimeTime）
-5. 閘級模擬（SDF）
+5. Gate-level sim（SDF）
 6. APR（ICC2）
 7. DRC / LVS（ICV）
 8. 寄生萃取（StarRC）
@@ -21,11 +21,11 @@
 ## 0. 開始前：要不要上 PAD（`USE_PAD`）
 
 - **目的**：決定這顆設計是「只做核心」（IP block），還是「加 IO PAD 的全晶片」。**要在寫 RTL、跑第一次模擬之前就決定**，不能等到 APR。
-- **為什麼要這麼早**：PAD 本身有延遲（SAED32 slow corner：input PAD 約 0.4 ns；output PAD 推 1 pF 約 1.2–1.4 ns），而且輸出負載從核心的 20 fF 變成板級 1 pF。這些會直接影響：tb 在什麼時間點取樣輸出、合成的 I/O 時序預算、STA 結果、閘級模擬。等到 APR 才加，前面五個階段的結論都要重做。
+- **為什麼要這麼早**：PAD 本身有延遲（SAED32 slow corner：input PAD 約 0.4 ns；output PAD 推 1 pF 約 1.2–1.4 ns），而且輸出負載從核心的 20 fF 變成板級 1 pF。這些會直接影響：tb 在什麼時間點取樣輸出、合成的 I/O 時序預算、STA 結果、Gate-level sim。等到 APR 才加，前面五個階段的結論都要重做。
 - **`USE_PAD 1` 時的第 0 步**：`pad` 階段（`pad_tools.py`）
   1. 讀 **RTL** top module 的 port（ANSI 或 Verilog-1995 都可以，位寬可用 parameter），每個 bit 接一顆 PAD，產生 `${DESIGN}_chip` wrapper（`runs/pad/${DESIGN}_chip.v`）。
   2. 從 IO library 的 NLDM 表查出 PAD 延遲（`PAD_SIM_CORNER`，預設 slow），產生帶 `specify` 的 PAD 模擬 model（`runs/pad/io_pad_sim.v`）。官方 IO Verilog model 沒有 specify，PAD 在模擬裡原本是零延遲。
-- **之後每個階段的 top 都是 `${DESIGN}_chip`**：RTL 模擬（wrapper＋RTL＋PAD model）、DC（PAD dont_touch）、Formality、PT、閘級模擬（SDF 的 PAD IOPATH 註入 PAD model）、APR、signoff。
+- **之後每個階段的 top 都是 `${DESIGN}_chip`**：RTL 模擬（wrapper＋RTL＋PAD model）、DC（PAD dont_touch）、Formality、PT、Gate-level sim（SDF 的 PAD IOPATH 註入 PAD model）、APR、signoff。
 - **怎麼確認**：`pad` 階段印出 `PAD_DELAY` 數值；RTL 模擬 log 開頭印出 PAD model 使用的延遲。
 - **限制**：只有 SAED32（io_std）有 IO library；`PROCESS cbdk`（CBDK_IC_Contest_v2.5）沒有 PAD library，`USE_PAD 1` 會直接報錯。
 
@@ -55,7 +55,7 @@
 - **`USE_PAD 1`**：`analyze` RTL＋wrapper，`elaborate ${DESIGN}_chip`；link 加上 IO library（slow＋fast）；`set_dont_touch [get_cells pad_*]`；約束用 `constraints_chip.sdc`（1 pF）。晶片 port 到 PADIO 的 net 是打線，不是晶片內走線：要 `set_dont_touch` 再 `set_resistance 0`（只設電阻，compile 會把它拿掉，OPT-801）。輸出 `${DESIGN}_chip_syn.v`；核心面積另外寫到 `reports/area_core.rpt`（`area.rpt` 含 PAD，例：24 個訊號 PAD 的設計約 29 萬 µm²）。
 - **省略會怎樣**：沒有 netlist；約束錯了，合成結果看起來通過，但其實不符合規格。
 
-## 3. 等價驗證（Formality）
+## 3. Function 驗證（Formality）
 
 - **目的**：用數學方法證明 netlist 與 RTL 功能相同，不靠 pattern。
 - **流程**：`set_svf` → `read_db -technology_library` → `read_verilog -r`（RTL）→ `set_top r:/WORK/<top>` → 讀 implementation（`-i`）→ `match` → `verify`。
@@ -68,10 +68,10 @@
 - **目的**：用 signoff 等級的時序引擎，在多個 corner 檢查 setup／hold／電氣規則。DC 的 report_timing 也是在分析合成電路；PT 是本流程選擇的獨立引擎。
 - **corner 觀念**：setup 看 slow（ss、高溫、低壓），hold 看 fast（ff、低溫、高壓）。但 SAED32 的 wire-load tree_type 在 ss／tt／ff 分別是 best／balanced／worst，所以不能預設 ss 一定最嚴，三個都要跑。
 - **怎麼確認**：每個 corner 的 setup 與 hold slack 都 ≥ 0、`report_constraint` 沒有 VIOLATED、`check_timing -verbose` 乾淨；`report_analysis_coverage` 未測項目（例如非週期 reset 的 min pulse width）要列出來，不要宣稱 100% coverage。
-- **輸出**：每個 corner 的 SDF（`write_sdf -version 3.0`），給閘級模擬用。
-- **`USE_PAD 1`**：link 同 corner 的 IO library，top = `${DESIGN}_chip`。佈局前有兩個設定一定要有：(1) port↔PADIO 的打線 net 電阻設 0；(2) clock PAD 之後的 clock net 設 `set_ideal_network [get_pins pad_<clk>/DOUT]`。核心模式的 clock 從 port 直接進 FF，本來就是 ideal；PAD 模式中間隔了一顆 PAD，沒設的話，PT 寫出的 SDF 會把 wire-load 估出來的高扇出 clock net 延遲寫進去（例：實測 2.3 µs，fast 閘級模擬直接失敗）。PAD 本身的延遲寫在 `reports_<corner>/pad_delay_in.rpt`、`pad_delay_out.rpt`。
+- **輸出**：每個 corner 的 SDF（`write_sdf -version 3.0`），給 Gate-level sim 用。
+- **`USE_PAD 1`**：link 同 corner 的 IO library，top = `${DESIGN}_chip`。佈局前有兩個設定一定要有：(1) port↔PADIO 的打線 net 電阻設 0；(2) clock PAD 之後的 clock net 設 `set_ideal_network [get_pins pad_<clk>/DOUT]`。核心模式的 clock 從 port 直接進 FF，本來就是 ideal；PAD 模式中間隔了一顆 PAD，沒設的話，PT 寫出的 SDF 會把 wire-load 估出來的高扇出 clock net 延遲寫進去（例：實測 2.3 µs，fast Gate-level sim 直接失敗）。PAD 本身的延遲寫在 `reports_<corner>/pad_delay_in.rpt`、`pad_delay_out.rpt`。
 
-## 5. 閘級模擬（SDF）
+## 5. Gate-level sim（SDF）
 
 - **目的**：netlist 加上 cell／wire 延遲後再跑一次功能，抓 STA 抓不到的問題，例如 X 傳播、reset 時序、tb 取樣時間。
 - **指令**：`vcs ... <netlist> -v <cell model> +define+SDF +neg_tchk +maxdelays`（或 `+mindelays`）。CBDK 用 `tsmc13_neg.v`；SAED32 用 `saed32nm.v`。
@@ -166,7 +166,7 @@ SAED32 的 PAD 資料在 `lib/io_std/`：
 | 資料 | 內容 | 哪一步用 |
 |---|---|---|
 | `db_nldm/*.db`、`.lib` | 每顆 PAD 的延遲、負載能力、電壓，一個 corner 一份 | 合成、STA；`pad_tools.py` 從這裡查 PAD 延遲 |
-| `verilog/` | PAD 的行為 model（沒有延遲） | RTL／閘級模擬 |
+| `verilog/` | PAD 的行為 model（沒有延遲） | RTL／Gate-level sim |
 | `lef/` | 外框大小、pin 位置、繞線阻擋 | 建 NDM、APR |
 | `gds/` | 真正的版圖 | APR 輸出 GDS 時併進去，給 DRC／LVS |
 | `lvs/*.cdl` | PAD 裡的電晶體電路 | LVS |
@@ -208,7 +208,7 @@ PAD 從第 0 步就加，不是到 APR 才加（理由見第 0 節）：
 | 1. RTL 模擬 | 模擬 `${DESIGN}_chip`，訊號經過 PAD，看得到延遲 | `run_rtl_sim.sh` |
 | 2. 合成 | PAD `dont_touch`；輸出負載 1 pF；port 到 PAD 的打線 `set_resistance 0` | `dc_syn.tcl`、`constraints_chip.sdc` |
 | 4. STA | 路徑起訖點是 PAD，延遲含 PAD；clock PAD 後設 ideal network | `pt_prelayout.tcl` |
-| 5. 閘級模擬 | SDF 的 PAD 延遲註入 PAD model | `run_gate_sim.sh` |
+| 5. Gate-level sim | SDF 的 PAD 延遲註入 PAD model | `run_gate_sim.sh` |
 | 6. APR | 依 PAD 數算 die；擺 PAD／corner／filler；四組電源；電源 PAD 接 core ring；port 綁在 PAD 上；clock PAD 後插 buffer 當 clock tree 起點 | `apr_pad_ring.tcl`、`apr_core.tcl` |
 | 7. DRC／LVS | GDS 併入 PAD 版圖；LVS 加入 PAD 的 CDL | `apr_finish.tcl`、`run_icv_drc.sh`、`run_icv_lvs.sh` |
 | 8、9 | 和核心相同，top 是 `${DESIGN}_chip` | |

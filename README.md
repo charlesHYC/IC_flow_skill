@@ -44,17 +44,17 @@
 |---|---|---|
 | 寫需求、確認格局合理 | 寫 RTL、跑模擬確認功能對 | 1 RTL 模擬 |
 | 把需求換成標準建材清單 | **合成**：RTL → 標準元件（AND、OR、正反器…）組成的 netlist | 2 合成 |
-| 確認建材清單跟需求一致 | **等價驗證**：數學證明 netlist 和 RTL 功能一樣 | 3 Formality |
+| 確認建材清單跟需求一致 | **Function 驗證**：數學證明 netlist 和 RTL 功能一樣 | 3 Formality |
 | 估算水電夠不夠用 | **STA**：算每條訊號路徑在時脈內跑不跑得完 | 4 STA |
-| 用建材清單再模擬一次 | **閘級模擬**：netlist 加上元件延遲再跑一次 testbench | 5 閘級模擬 |
+| 用建材清單再模擬一次 | **Gate-level sim**：netlist 加上元件延遲再跑一次 testbench | 5 Gate-level sim |
 | 畫平面圖、擺家具、拉管線 | **APR**：擺放元件、長時脈樹、繞線 | 6 APR |
 | 建管處審圖 | **DRC／LVS**：檢查版圖合不合製程規則、和電路圖一不一致 | 7 DRC／LVS |
 | 量實際管線長度 | **寄生萃取**：算出每條金屬線真正的電阻電容 | 8 StarRC |
-| 用實際管線重新驗收 | 用真實線延遲再做一次 STA、等價驗證、模擬 | 9 繞線後驗證 |
+| 用實際管線重新驗收 | 用真實線延遲再做一次 STA、Function 驗證、模擬 | 9 繞線後驗證 |
 
 ```mermaid
 flowchart LR
-  P["0 PAD 規劃<br/>（選用）"] --> A["1 RTL 模擬<br/>VCS"] --> B["2 合成<br/>Design Compiler"] --> C["3 等價驗證<br/>Formality"] --> D["4 STA<br/>PrimeTime"] --> E["5 閘級模擬<br/>VCS + SDF"]
+  P["0 PAD 規劃<br/>（選用）"] --> A["1 RTL 模擬<br/>VCS"] --> B["2 合成<br/>Design Compiler"] --> C["3 Function 驗證<br/>Formality"] --> D["4 STA<br/>PrimeTime"] --> E["5 Gate-level sim<br/>VCS + SDF"]
   E --> F["6 APR<br/>IC Compiler II"] --> G["7 DRC / LVS<br/>IC Validator"] --> H["8 寄生萃取<br/>StarRC"] --> I["9 繞線後驗證<br/>PT / FM / VCS"]
 ```
 
@@ -308,7 +308,7 @@ bash scripts/run_stage.sh pad
 
 > **為什麼要做？** 這是唯一確認「設計本身對不對」的步驟。後面的合成、APR 都只負責「照你寫的做出來」，如果 RTL 本來就錯，後面做得再完美也是錯的晶片。
 >
-> **省略會怎樣？** 等到閘級模擬或晶片做回來才發現功能錯，要從頭改、重跑整個流程。
+> **省略會怎樣？** 等到 Gate-level sim 或晶片做回來才發現功能錯，要從頭改、重跑整個流程。
 >
 > **業界會用嗎？** 會，而且是整個專案花最多人力的地方。差別是業界不會只用一個固定測資的 testbench：
 > - 用 SystemVerilog／UVM 寫隨機測試，搭配**覆蓋率（coverage）**確認每個功能、每種狀況都測過。
@@ -354,11 +354,11 @@ cd runs/synthesis && dc_shell -f ../../scripts/dc_syn.tcl
 
 ---
 
-### 3. 等價驗證 — Formality
+### 3. Function 驗證 — Formality
 
 不跑模擬，用數學方法證明合成出來的 netlist 和 RTL 功能完全相同。
 
-> **為什麼要做？** 合成工具會大幅改寫電路（合併、拆開、改名、重新排列），你沒辦法用肉眼確認它沒改壞。等價驗證用數學證明兩邊在所有輸入下的行為都一樣，比模擬可靠：模擬只能測你給的那些測資。
+> **為什麼要做？** 合成工具會大幅改寫電路（合併、拆開、改名、重新排列），你沒辦法用肉眼確認它沒改壞。Function 驗證用數學證明兩邊在所有輸入下的行為都一樣，比模擬可靠：模擬只能測你給的那些測資。
 >
 > **省略會怎樣？** 合成的邏輯錯誤（例如約束寫錯導致工具誤刪電路）可能一路被帶到晶片上。
 >
@@ -388,7 +388,7 @@ cd runs/formality && fm_shell -f ../../scripts/fm_rtl2gate.tcl
 
 | 檔案 | 做什麼 |
 |---|---|
-| `pt_prelayout.tcl` | 讀 netlist 和約束，報告 setup／hold slack 與違規；同時寫出該 corner 的 SDF（每顆元件的延遲），給下一步閘級模擬用。每個 corner 跑一次 |
+| `pt_prelayout.tcl` | 讀 netlist 和約束，報告 setup／hold slack 與違規；同時寫出該 corner 的 SDF（每顆元件的延遲），給下一步 Gate-level sim 用。每個 corner 跑一次 |
 
 產出：`<DESIGN>_<corner>.sdf`　　成功標記：`STA_PASS slow`（typical、fast 同理）
 
@@ -399,13 +399,13 @@ for c in slow typical fast; do FLOW_CORNER=$c pt_shell -f ../../scripts/pt_prela
 
 ---
 
-### 5. 閘級模擬 — VCS
+### 5. Gate-level sim — VCS
 
 用合成後的 netlist 加上每顆元件的真實延遲（SDF），再跑一次 testbench。比賽通常評到這一步。
 
 > **為什麼要做？** 用帶真實延遲的 netlist 再跑一次，可以抓到 RTL 模擬看不到的問題，例如 reset 沒有正確初始化、不定值（X）亂傳、testbench 取樣時間太貼近訊號變化。
 >
-> **業界會用嗎？** 會，但**只跑一部分測試**。帶 SDF 的閘級模擬非常慢，而時序正確性已由 STA 保證、功能等價已由 Formality 保證，所以業界通常只用它檢查 reset、開機流程、X 傳遞和 DFT 測試向量，不會把全部回歸測試都跑一遍。IC Contest 會把它列為評分項目，所以這裡完整跑。
+> **業界會用嗎？** 會，但**只跑一部分測試**。帶 SDF 的 Gate-level sim 非常慢，而時序正確性已由 STA 保證、功能等價已由 Formality 保證，所以業界通常只用它檢查 reset、開機流程、X 傳遞和 DFT 測試向量，不會把全部回歸測試都跑一遍。IC Contest 會把它列為評分項目，所以這裡完整跑。
 
 | 檔案 | 做什麼 |
 |---|---|
@@ -509,15 +509,15 @@ cd runs/starrc && bash ../../scripts/run_starrc.sh
 
 ### 9. 繞線後驗證 — PrimeTime、Formality、VCS
 
-用真實的線延遲，把時序、等價、模擬再驗一次。
+用真實的線延遲，把 STA、Function 驗證、Gate-level sim 再驗一次。
 
-> **為什麼要做？** 到這一步，電路才終於有了「真實的線延遲」和「真實的時脈樹」。前面所有的檢查（時序、等價、模擬）都要用最終版本再確認一次，這才是真正的 **signoff**（簽核：確認可以下線）。
+> **為什麼要做？** 到這一步，電路才終於有了「真實的線延遲」和「真實的時脈樹」。前面所有的檢查（STA、Function 驗證、Gate-level sim）都要用最終版本再確認一次，這才是真正的 **signoff**（簽核：確認可以下線）。
 >
 > **業界會用嗎？** 會，每一項都是業界標準做法：
 > - **繞線後 STA**：最後算數的時序結果。
 > - **Signoff ECO**：STA 抓到違規後，回 APR 做小幅修改再重新驗證，這個循環在業界很常見。業界常用 PrimeTime ECO 或 Tweaker 這類工具自動產生修改指令；`apr_signoff_eco.tcl` 是它的簡化版。
-> - **繞線後等價驗證**：APR 加了時脈樹和 buffer，netlist 又被改過，所以要再證明一次。
-> - **繞線後閘級模擬**：同第 5 步，業界只跑部分測試。
+> - **繞線後 Function 驗證**：APR 加了時脈樹和 buffer，netlist 又被改過，所以要再證明一次。
+> - **繞線後 Gate-level sim**：同第 5 步，業界只跑部分測試。
 
 | 檔案 | 工具 | 做什麼 | 成功標記 |
 |---|---|---|---|
@@ -569,7 +569,7 @@ cd runs/apr && icc2_shell -f ../../scripts/apr_signoff_eco.tcl && cd ../..
 | **area** | 元件總面積（µm²） | 越小越好（比賽常用面積 × 時間評分） |
 | **DRC CLEAN** | 整張版圖沒有違反製程規則（有 PAD 時包含 PAD） | `CLEAN` |
 | **LVS PASS** | 版圖抽出來的電路和 netlist 一致 | `PASS` |
-| **SDF $removal warn** | 閘級模擬時非同步 reset 的 removal 檢查 warning 數 | 已知、可接受的 warning，功能仍要 PASS |
+| **SDF $removal warn** | Gate-level sim 時非同步 reset 的 removal 檢查 warning 數 | 已知、可接受的 warning，功能仍要 PASS |
 
 三個 **corner**（slow／typical／fast）是指晶片在「最慢、一般、最快」三種製程、電壓、溫度條件下都要能正常運作。
 
@@ -593,7 +593,7 @@ cd runs/apr && icc2_shell -f ../../scripts/apr_signoff_eco.tcl && cd ../..
 可以看 demo、讀教材、問 AI 助手流程的問題；但要真的跑流程，需要學校或公司的 Synopsys 授權與伺服器。
 
 **Q：可以用在比賽嗎？**
-IC Contest 通常只評到第 5 步（RTL 模擬＋合成後閘級模擬），第 6–9 步是延伸練習。比賽用 CBDK_IC_Contest 製程時，把 `PROCESS` 設成 `cbdk`。
+IC Contest 通常只評到第 5 步（RTL 模擬＋合成後 Gate-level sim），第 6–9 步是延伸練習。比賽用 CBDK_IC_Contest 製程時，把 `PROCESS` 設成 `cbdk`。
 
 **Q：SAED32 的 PAD library 不是有錯嗎？有 PAD 也能過 DRC／LVS？**
 可以。SAED32 io_std 的 PAD 有幾處版圖、電路網表、LEF 彼此不一致（例如輸入 PAD 裡有一條線和 VDDIO 短路、電源 PAD 的二極體方向寫反）。`pad` 階段的 `fix_io_lib.py` 會產生修正版 library（製程原檔不動），每一項的原因寫在它的檔頭和 [`pitfalls.md`](skills/digital-ic-flow/references/pitfalls.md)「PAD」一節。有一個代價：LVS 把 VSS 和 VSSIO 當成同一個 net（兩者在矽片上共用基板），所以這兩者之間的金屬短路抓不到。

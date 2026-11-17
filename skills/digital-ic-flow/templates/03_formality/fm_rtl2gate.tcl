@@ -1,5 +1,5 @@
 ##############################################################################
-# fm_rtl2gate.tcl — 階段 3：Formality 等價驗證（RTL vs 合成 netlist）
+# fm_rtl2gate.tcl — 階段 3：Formality Function 驗證（RTL vs 合成 netlist）
 # reference (r:) = RTL；implementation (i:) = netlist；SVF 提供 DC 的轉換指引
 # USE_PAD=1：兩邊的 top 都是 ${DESIGN}_chip（含 PAD）
 ##############################################################################

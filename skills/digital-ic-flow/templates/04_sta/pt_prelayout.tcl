@@ -1,7 +1,7 @@
 ##############################################################################
 # pt_prelayout.tcl — 階段 4：PrimeTime 佈局前 STA（每個 corner 跑一次）
 # 執行：FLOW_CORNER=slow pt_shell -f pt_prelayout.tcl
-# 會另外寫出該 corner 的 SDF，給階段 5 的閘級模擬使用
+# 會另外寫出該 corner 的 SDF，給階段 5 的 Gate-level sim 使用
 ##############################################################################
 source [file join [file dirname [info script]] flow_config.tcl]
 
@@ -37,7 +37,7 @@ source [file join [file dirname [info script]] \
 # 套 wire-load 的電阻會算出幾十 ns 的假延遲（例：某設計 reset 路徑 -19 ns），所以電阻設 0。
 # 只在佈局前（DC／佈局前 PT）需要；繞線後用 StarRC 的實際 RC。
 # clock 經過 clock PAD 後才進核心：佈局前 clock net 設成 ideal。沒有這行，PT 寫出的 SDF
-# 會把 wire-load 估的高扇出 clock net 延遲寫進去（例：實測 2.3 us，fast 閘級模擬失敗）
+# 會把 wire-load 估的高扇出 clock net 延遲寫進去（例：實測 2.3 us，fast Gate-level sim 失敗）
 if {$USE_PAD} {
     set_resistance 0 [get_nets -of_objects [get_ports *]]
     set_ideal_network [get_pins pad_${CLK_PORT}/DOUT]

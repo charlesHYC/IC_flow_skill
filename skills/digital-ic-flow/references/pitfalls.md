@@ -30,13 +30,13 @@
 - **打開 recovery／removal 後，PT slow／typical 仍有 removal 違規** → DC 用 FF library 修 hold，但 removal 時間在 SS 最大（REFRACT：`RST` 只過一個反相器到 `RSTB`，slow −0.20 ns，609 個 DFF）。公版改成 `set_operating_conditions -max <FF> -max_library <FF> -min <SS> -min_library <SS>`：setup 用 FF、hold／removal 用 SS 分析。REFRACT 面積 17375 → 19844（+14%，多半是 reset 路徑的延遲 buffer）。
 - **reg-to-reg 差一點點（例如 −0.002 ns）** → `report_timing -significant_digits 4` 確認，再做 `compile_ultra -incremental`，或加強 `group_path -weight`。
 
-## 等價驗證（Formality）
+## Function 驗證（Formality）
 
 - **FM-503 Register … not found in the reference（暫存器在 `DP_OP_*` 底下）** → `-spg` 加 retime 把暫存器推進 datapath。改用 `compile_ultra -retime -scan`。
 - **verify 卡很久（geofence＋compile_ultra 實測 >20 分鐘仍在 Verifying）** → compile_ultra 重組乘法器等 datapath，等價證明變難。改回 `compile`（geofence 實測很快 PASS），或保留 compile_ultra 但確定 SVF 有讀到、考慮 `-no_autoungroup`。
 - **大量 unmatched black box** → 沒讀 SVF、沒設 `hdlin_dwroot`，或 DC 沒開 `hdlin_enable_hier_map`。
 
-## 閘級模擬
+## Gate-level sim
 
 - **`SDFCOM_CFTC Cannot find timing check $removal(posedge RSTB,posedge CLK)`（DFFARX*）** → 同一個原因：cell model 沒有 removal check。這是 warning，不影響功能結果，但 reset 的 removal 時序只有 STA 有檢查。`run_gate_sim.sh` 只容許這一種，其餘 SDF warning（包括 PAD 上的 `SDFCOM_IANE`）都判失敗。舊版公版只檢查 error，所以這 17 個 warning 一直沒被注意到（2026-11-12 發現）。
 - **SAED32 SDF 有 `REMOVAL`，VCS 報 annotation 錯誤** → 舊版 SAED cell model 把 removal 寫成 clock-to-reset 的 HOLD。只在**模擬副本**把 `(REMOVAL …)` 改成 `(HOLD …)`，並做反向比對，確認只改這一處。原始 SDF 要保留。（geofence `scripts/saed32/gate.py`）
@@ -70,9 +70,9 @@
 - **在 `source` 的子檔出錯後 icc2_shell 停在提示字元，不會結束** → 工具在等 stdin。`run_stage.sh` 用 `exec </dev/null`，讓它直接結束並回報錯誤。
 - **`Port 'wire' is not defined in module terminal list`（SVR-8）** → ICC2 的 Verilog reader 不吃 `input wire clk;`。wrapper 要用 Verilog-1995 寫法（`input clk;`）。另外它也不吃 `` `ifdef ``，所以 `pad_tools.py` 產生的 wrapper 是純結構、沒有 `` `ifdef ``（RTL 模擬、DC、Formality 共用同一份）。
 - **IO Verilog model 的輸出一直是 X** → `RECEIVER`／`DRIVER` 會檢查 `VDD==1 && VSS==0 && VDDIO==1 && VSSIO==0`。公版的 PAD model（`pad_tools.py padmodel` 產生的 `io_pad_sim.v`）在 model 內用 `supply1`／`supply0` 接這四個 pin，所以 RTL、合成後的 netlist（沒有 PG）都能直接模擬。繞線後含 PG 的 netlist 仍要用 `pad_tools.py simnet` 拿掉 std cell 上的 `.VDD/.VSS`（std cell model 沒有 PG port）。PG 接得對不對由 LVS 檢查，不靠模擬。
-- **IO Verilog model 沒有延遲（PAD 在模擬裡是零延遲）** → 官方 `saed32nm_io_wb.v` 沒有 specify block，SDF 的 PAD IOPATH 也註入不進去（`SDFCOM_IANE`）。`pad_tools.py padmodel` 從 IO library NLDM 表查出延遲，產生同名的 PAD model（加 specify，邏輯沿用官方 RECEIVER／DRIVER），模擬時放在 source、官方 model 用 `-v`，同名 module 以 source 為準。RTL 模擬用 specify 預設值，閘級模擬由 SDF 覆蓋。
+- **IO Verilog model 沒有延遲（PAD 在模擬裡是零延遲）** → 官方 `saed32nm_io_wb.v` 沒有 specify block，SDF 的 PAD IOPATH 也註入不進去（`SDFCOM_IANE`）。`pad_tools.py padmodel` 從 IO library NLDM 表查出延遲，產生同名的 PAD model（加 specify，邏輯沿用官方 RECEIVER／DRIVER），模擬時放在 source、官方 model 用 `-v`，同名 module 以 source 為準。RTL 模擬用 specify 預設值，Gate-level sim 由 SDF 覆蓋。
 - **PAD 模式 DC／佈局前 PT 出現 -19～-22 ns setup，路徑從 input port 經過 PAD（`pad_reset/DOUT` 45 ns）** → port 到 PADIO 的 net 接了 PADIO 的 2.4 pF pin cap，wire-load 的電阻乘上它就是幾十 ns。這段其實是打線，佈局前要 `set_resistance 0`。DC 裡要先 `set_dont_touch` 這些 net，否則 compile 會把電阻設定拿掉（`OPT-801 Removing some annotated net resistances`）。
-- **PAD 模式 fast 閘級模擬跑到 tb timeout，但 STA 全部 PASS** → SDF 裡 `INTERCONNECT pad_clk/DOUT …/CLK` 是 2321 ns。clock 經過 clock PAD 後，PT 不再把後面的 net 當成 ideal clock net，write_sdf 會把 wire-load 估出的高扇出延遲寫進去；STA 本身用 ideal clock，所以看不出來。佈局前 PT 要 `set_ideal_network [get_pins pad_<clk>/DOUT]`。
+- **PAD 模式 fast Gate-level sim 跑到 tb timeout，但 STA 全部 PASS** → SDF 裡 `INTERCONNECT pad_clk/DOUT …/CLK` 是 2321 ns。clock 經過 clock PAD 後，PT 不再把後面的 net 當成 ideal clock net，write_sdf 會把 wire-load 估出的高扇出延遲寫進去；STA 本身用 ideal clock，所以看不出來。佈局前 PT 要 `set_ideal_network [get_pins pad_<clk>/DOUT]`。
 - **`icv_nettran: Cell 'CORNER' is not defined`** → IO 的 CDL 沒有 `CORNER`／`FILLER*` 的 subckt。LVS netlist 要把這兩種實例刪掉（GDS 裡的形狀照樣會被萃取）。`write_verilog` 不能同時下 `-include` 和 `-exclude`，而電源 PAD、SHFILL 又屬於 `physical_only_cells`，所以 `apr_finish.tcl` 是先全部寫出，再用 regsub 刪掉。
 - **`VDD_NS: Port 'VDDPAD' not declared`（NETTRAN-904 warning）** → CDL 裡電源 PAD 的打線點就是 VDD 本身，沒有獨立的 port。這只是 warning，可以忽略。
 2026-11-17 用 REFRACT 跑 `USE_PAD=1`，把全晶片 DRC／LVS 從「只剩 IO 相關錯誤」做到 `RESULTS: CLEAN`／`Final comparison result:PASS`。下面每一項都是單獨找出、單獨驗證過的原因。前 7 項是 IO library 本身的錯，由 `fix_io_lib.py`（pad 階段）產生修正版 library 到 `runs/iofix/`；PDK 原檔不動。每一項修正前都先確認原始幾何和預期一致，PDK 版本不同就直接中止。

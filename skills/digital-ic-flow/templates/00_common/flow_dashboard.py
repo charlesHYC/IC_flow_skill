@@ -70,9 +70,9 @@ PHASES = [
     ("前段：功能與合成", [
         ("rtl_sim", "1", "RTL 模擬", "VCS", "tb 印出 PASS、mismatch = 0", "rtl_sim/console.log", "ALL PASS", "main"),
         ("synthesis", "2", "邏輯合成", "Design Compiler", "slack ≥ 0、無 constraint 違規", "synthesis/console.log", "DC_PASS", "main"),
-        ("formality", "3", "等價驗證", "Formality", "Verification SUCCEEDED", "formality/console.log", "FM_PASS", "main"),
+        ("formality", "3", "Function 驗證", "Formality", "Verification SUCCEEDED", "formality/console.log", "FM_PASS", "main"),
         ("sta", "4", "佈局前 STA", "PrimeTime ×3 corner", "每個 corner setup／hold ≥ 0", "sta/console_slow.log", "STA_PASS", "main"),
-        ("gate_sim", "5", "閘級模擬＋SDF", "VCS", "功能 PASS、SDF 0 error、只容許已知 warning", "gate_sim/console.log", "GATE_SIM_PASS", "main"),
+        ("gate_sim", "5", "Gate-level sim＋SDF", "VCS", "功能 PASS、SDF 0 error、只容許已知 warning", "gate_sim/console.log", "GATE_SIM_PASS", "main"),
     ]),
     ("後段：APR", [
         ("ndm", "6-0", "建 NDM library", "ICC2 lm_shell", "library 建立完成", "ndm/console.log", "NDM_PASS", "main"),
@@ -87,7 +87,7 @@ PHASES = [
         ("starrc", "8", "寄生萃取", "StarRC ×3 corner", "每個 corner SPEF 產生", "starrc/console.log", "STARRC_PASS", "main"),
         ("pt_post", "9a", "繞線後 STA", "PrimeTime ×3 corner", "實際 RC 下 setup／hold ≥ 0、無違規", "pt_post/console_slow.log", "POSTROUTE_STA_PASS", "main"),
         ("signoff_eco", "9a′", "Signoff ECO", "IC Compiler II", "修掉 StarRC＋PT 看到的違規", "apr/signoff_eco_console.log", "SIGNOFF_ECO_PASS", "fix"),
-        ("fm_post", "9b", "繞線後等價驗證", "Formality", "RTL vs routed netlist SUCCEEDED", "fm_post/console.log", "FM_POST_PASS", "main"),
+        ("fm_post", "9b", "繞線後 Function 驗證", "Formality", "RTL vs routed netlist SUCCEEDED", "fm_post/console.log", "FM_POST_PASS", "main"),
         ("gate_post", "9c", "繞線後 SDF 模擬", "VCS", "功能 PASS、SDF 0 error", "gate_post/console.log", "GATE_SIM_PASS", "main"),
     ]),
 ]
@@ -99,7 +99,7 @@ OUTPUT = {
     "rtl_sim": "功能基準（之後每一步都和它比）",
     "synthesis": "{top}_syn.v、.sdc、.svf、.sdf",
     "formality": "netlist ≡ RTL 的證明",
-    "sta": "{design}_<corner>.sdf（給閘級模擬）",
+    "sta": "{design}_<corner>.sdf（給 Gate-level sim）",
     "gate_sim": "含延遲的功能確認",
     "ndm": "stdcell_rvt.ndm（PAD 模式加 io.ndm）",
     "apr": "routed block",
@@ -124,7 +124,7 @@ EXPLAIN = {
     "rtl_sim": "用官方 testbench 跑 RTL，確認功能正確；之後每一步都要跟這個結果一致。",
     "synthesis": "Design Compiler 依 SDC 時序約束，把 RTL 對應成 standard cell 組成的 gate-level netlist。",
     "formality": "不跑模擬，用數學方法證明合成出的 netlist 與 RTL 功能相同（逐一比對 compare point）。",
-    "sta": "PrimeTime 在 slow／typical／fast 三個 corner 算每條路徑的 setup／hold slack，並寫出給閘級模擬的 SDF。",
+    "sta": "PrimeTime 在 slow／typical／fast 三個 corner 算每條路徑的 setup／hold slack，並寫出給 Gate-level sim 的 SDF。",
     "gate_sim": "netlist 加上 SDF 延遲再跑一次 testbench，確認帶真實 cell 延遲時功能仍正確。",
     "ndm": "把 standard cell（與 IO PAD）的 LEF 外框和 timing 打包成 ICC2 用的 NDM library。",
     "apr": "ICC2 做 floorplan、電源網路、placement、CTS（時脈樹）與 routing，這一步只要求繞線乾淨。",

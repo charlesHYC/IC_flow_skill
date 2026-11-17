@@ -36,7 +36,7 @@ redirect $R/setup.rpt   {report_timing -delay_type max -slack_lesser_than 1e9 -m
 redirect $R/hold.rpt    {report_timing -delay_type min -slack_lesser_than 1e9 -max_paths 10 -significant_digits 5}
 redirect $R/constraints.rpt {report_constraint -all_violators -significant_digits 5}
 redirect $R/coverage.rpt    {report_analysis_coverage}
-# 給繞線後閘級模擬用的 SDF
+# 給繞線後 Gate-level sim 用的 SDF
 write_sdf -version 3.0 ${DESIGN}_postroute_${corner}.sdf
 
 set setup [get_attribute [get_timing_paths -delay_type max -max_paths 1] slack]
