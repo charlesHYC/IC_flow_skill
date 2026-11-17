@@ -13,7 +13,9 @@
 | **`digital-ic-flow` skill** | 給 AI 助手看的「教材＋腳本範本」 | 問 AI 助手「下一步要做什麼？」「這個 DRC 錯誤是什麼意思？」「幫我寫 PrimeTime 腳本」，它會照這份教材回答，並用裡面的公版腳本幫你建專案、跑流程 |
 | **`/ic_flow` 面板**（選用） | 即時進度面板（目前只有 Claude Code 能用） | 看專案跑到哪一步、哪一步 PASS／FAIL、關鍵數字；點任一階段看白話說明 |
 
-> 這是給任何 cell-based 數位 IC 設計用的教學公版：把腳本複製到自己的專案，照自己的設計一個階段一個階段修改。公版用兩個 IC Contest 題目當例子在 SAED32 教學製程上從頭跑過，[其中一個例子的完整結果](#五分鐘體驗不用裝-eda-工具)放在 `examples/`。
+> 這是給任何 cell-based 數位 IC 設計用的教學公版：把腳本複製到自己的專案，照自己的設計一個階段一個階段修改。公版用 IC Contest 題目當例子在 SAED32 教學製程上從頭跑過，無 PAD 與有 PAD 兩種都是 `ALL_STAGES_PASS`（DRC CLEAN、LVS PASS），[完整結果](#五分鐘體驗不用裝-eda-工具)放在 `examples/`，數字見[驗證狀態](#驗證狀態)。
+>
+> 想要不自動化、每一步自己改自己跑的版本，見姊妹 repo [ic-flow-template](https://github.com/charlesHYC/-ic-flow-template)：同樣的流程，只給每個階段的公版腳本，判斷交給你自己。
 
 ---
 
@@ -27,7 +29,8 @@
 6. [看懂結果](#看懂結果)
 7. [卡關了怎麼辦](#卡關了怎麼辦)
 8. [常見問題](#常見問題)
-9. [需求、限制、檔案說明](#需求與限制)
+9. [驗證狀態](#驗證狀態)
+10. [需求、限制、檔案說明](#需求與限制)
 
 ---
 
@@ -70,6 +73,8 @@ flowchart LR
 | 適合 | 先把流程跑通 | 想看完整晶片長什麼樣子 |
 
 不確定的話，**兩種都跑來比較**。AI 助手每次開始跑流程前都會問你選哪一種。
+
+PAD 是什麼、SAED32 提供哪些 PAD 資料、怎麼選 PAD、每一步要多做什麼、怎麼確認用對、corner pad 是什麼，見 [`flow_stages.md` 第 11 節](skills/digital-ic-flow/references/flow_stages.md#11-io-pad-完整說明)。
 
 ---
 
@@ -237,7 +242,7 @@ bash scripts/run_all.sh
 
 ## 每個階段用哪些腳本
 
-公版一共 28 個檔案，依流程階段分組如下。每一組寫出：用什麼工具、每個檔案在做什麼、產出什麼，以及怎麼執行。
+公版一共 29 個檔案，依流程階段分組如下。每一組寫出：用什麼工具、每個檔案在做什麼、產出什麼，以及怎麼執行。
 
 **執行方式（每個階段都一樣）**
 
@@ -432,7 +437,7 @@ cd runs/gate_sim && bash ../../scripts/run_gate_sim.sh
 |---|---|---|---|
 | `build_ndm.tcl` | 把標準元件的時序檔（.db）和外框檔（LEF）打包成 ICC2 用的 library（NDM） | `runs/ndm`，用 `icc2_lm_shell` | `NDM_PASS` |
 | `apr_core.tcl` | 主流程：floorplan → 電源網路 → 擺放 → 時脈樹（CTS）→ 繞線（含殘留 DRC 的修正回圈）。每一步存一個 block，出錯可從上一步重來。檔頭要依設計改 die 大小 | `runs/apr` | `APR_ROUTED` |
-| `apr_pad_ring.tcl` | 有 PAD 時由 `apr_core.tcl` 自動呼叫：算 die 大小、擺 PAD 和角落元件、把 PAD 電源接到核心電源環。不用單獨執行 | — | — |
+| `apr_pad_ring.tcl` | 有 PAD 時由 `apr_core.tcl` 自動呼叫：算 die 大小、擺 PAD（上下邊 `_NS`、左右邊 `_EW`）和角落元件、建立四組電源、把 PAD 電源接到核心電源環、把 port 綁在 PAD 上。不用單獨執行 | — | — |
 | `apr_eco.tcl` | 讀報告找出推不動負載的訊號（max_cap／max_transition 違規），自動插 buffer 修好 | `runs/apr` | `APR_PASS` |
 | `apr_finish.tcl` | 補 filler 元件，寫出 GDS 版圖、兩份 netlist（`routed.v` 給時序、`routed_pg.v` 含電源給 LVS）、DEF | `runs/finish` | `FINISH_PASS` |
 
@@ -517,7 +522,7 @@ cd runs/starrc && bash ../../scripts/run_starrc.sh
 | 檔案 | 工具 | 做什麼 | 成功標記 |
 |---|---|---|---|
 | `pt_postroute.tcl` | PrimeTime | 讀繞線後 netlist＋SPEF，用真的時脈樹重算 slack；寫出繞線後 SDF。每個 corner 跑一次 | `POSTROUTE_STA_PASS slow` 等 |
-| `apr_signoff_eco.tcl` | IC Compiler II | **修正回圈**：上一步還有小幅違規時，自動把元件換大一號或插 buffer。跑完要依序重跑 finish → DRC → LVS → StarRC → 繞線後 STA | `SIGNOFF_ECO_PASS` |
+| `apr_signoff_eco.tcl` | IC Compiler II | **修正回圈**：上一步還有小幅 max_cap／max_transition 違規時自動把元件換大一號或插 buffer；fast corner hold 差幾 ps 時在 FF 的 D pin 前插 buffer。跑完要依序重跑 finish → DRC → LVS → StarRC → 繞線後 STA | `SIGNOFF_ECO_PASS` |
 | `fm_postroute.tcl` | Formality | 證明繞線後的 netlist（多了時脈樹和 ECO 插的 buffer）仍和 RTL 相同 | `FM_POST_PASS` |
 | `run_gate_sim.sh` | VCS | 和第 5 步同一支，設 `POSTROUTE=1` 改用繞線後 netlist＋SDF | `GATE_SIM_PASS` |
 
@@ -562,8 +567,9 @@ cd runs/apr && icc2_shell -f ../../scripts/apr_signoff_eco.tcl && cd ../..
 | **setup slack** | 訊號在下一個時脈來之前，還多出多少時間 | ≥ 0（負的代表太慢，要放寬週期或改電路） |
 | **hold slack** | 訊號會不會太快、蓋掉上一筆資料 | ≥ 0 |
 | **area** | 元件總面積（µm²） | 越小越好（比賽常用面積 × 時間評分） |
-| **DRC core 0** | 你的電路區域沒有違反製程規則 | 0 |
-| **MOS matched** | LVS 對上的電晶體數 | 全部對上 |
+| **DRC CLEAN** | 整張版圖沒有違反製程規則（有 PAD 時包含 PAD） | `CLEAN` |
+| **LVS PASS** | 版圖抽出來的電路和 netlist 一致 | `PASS` |
+| **SDF $removal warn** | 閘級模擬時非同步 reset 的 removal 檢查 warning 數 | 已知、可接受的 warning，功能仍要 PASS |
 
 三個 **corner**（slow／typical／fast）是指晶片在「最慢、一般、最快」三種製程、電壓、溫度條件下都要能正常運作。
 
@@ -596,7 +602,35 @@ IC Contest 通常只評到第 5 步（RTL 模擬＋合成後閘級模擬），�
 看 [`glossary.md`](skills/digital-ic-flow/references/glossary.md)，每個縮寫都有全名和白話解釋；或直接問 AI 助手「SDF 是什麼？」。
 
 **Q：每一步的原理在哪裡？**
-[`flow_stages.md`](skills/digital-ic-flow/references/flow_stages.md)：每個階段的目的、做法、檢查清單。
+[`flow_stages.md`](skills/digital-ic-flow/references/flow_stages.md)：每個階段的目的、做法、檢查清單；PAD 的完整說明在第 11 節。
+
+**Q：這個 repo 和 ic-flow-template 差在哪？**
+這個 repo 有一鍵跑完（`run_all.sh`）、自動判定、三個自動修正回圈和流程表格／面板，適合想先看到整個流程跑通的人。[ic-flow-template](https://github.com/charlesHYC/-ic-flow-template) 只給每個階段的公版腳本，檔頭寫清楚要改哪裡、跑完看哪份報告，每一步自己跑、自己判斷，適合想練習每一步怎麼做的人；它只做核心，不含 PAD 腳本。
+
+---
+
+## 驗證狀態
+
+2026-11-17 用 REFRACT（2026 IC Contest 題目，SAED32 EDK、clock 50 ns、約 600 個帶非同步 reset 的 DFF）從乾淨目錄跑 `run_all.sh`，兩種模式用同一套腳本：
+
+| | 無 PAD（`USE_PAD 0`） | 有 PAD（`USE_PAD 1`） |
+|---|---|---|
+| 結果 | `ALL_STAGES_PASS`，約 31 分鐘 | `ALL_STAGES_PASS`，約 57 分鐘 |
+| 晶片 | 核心面積 19978.0 µm² | 49 個訊號 PAD，die 1200 µm、core 520 µm |
+| PAD 延遲（slow） | — | 輸入 0.42／0.34 ns，輸出推 1 pF 1.23／1.36 ns |
+| DRC／LVS | CLEAN／PASS | CLEAN／PASS（44,171 個 MOS） |
+| 電源浮接 | 0 | 0 |
+| 繞線後 setup（slow／typical／fast） | +36.06／+42.05／+45.67 ns | slow +37.18 ns |
+| 繞線後 hold 最差 | +0.006 ns（fast） | +0.00005 ns（fast，signoff ECO 2 輪後） |
+| 繞線後 Formality、SDF 模擬 | PASS | PASS |
+
+完整表格在 [`examples/`](examples/)。這一輪找到並修正的問題寫在 [`pitfalls.md`](skills/digital-ic-flow/references/pitfalls.md)，包括：
+
+- 有 PAD 時 DRC／LVS 的 10 個原因：SAED32 PAD 資料本身的不一致 6 項（由 `fix_io_lib.py` 產生修正版副本），公版腳本的問題 4 項（左右邊 PAD 方向、tie cell、port 文字位置、VSS／VSSIO 共用基板）。
+- tie cell 原本一顆都插不進去（SAED32 的 TIEH／TIEL 是 dont_use、dont_touch），兩種模式都受影響。
+- signoff ECO 讀不到 PT 的 `(VIOLATED: increase significant digits)`，會漏修很小的違規。
+
+較早用 geofence（IC Contest 題目，30 ns）驗證過舊版公版：無 PAD `ALL_STAGES_PASS`；有 PAD 時當時還沒有 `fix_io_lib.py`，DRC／LVS 沒有通過。
 
 ---
 
@@ -624,13 +658,13 @@ IC_flow_skill/
 ├── skills/digital-ic-flow/          ← skill 本體
 │   ├── SKILL.md                     給 AI 助手看的總說明與規則
 │   ├── references/
-│   │   ├── flow_stages.md           每個階段的原理與檢查清單
+│   │   ├── flow_stages.md           每個階段的原理與檢查清單（第 11 節：IO PAD 完整說明）
 │   │   ├── pitfalls.md              實際踩過的錯誤與解法
 │   │   └── glossary.md              縮寫對照（全名＋白話）
 │   └── templates/                   公版腳本，會被複製到你專案的 scripts/
 │       ├── 00_common/               總設定 flow_config.tcl、run_stage.sh、run_all.sh、流程表格
-│       ├── 01_rtl_sim/ … 07_signoff/  各階段腳本（每個檔案的用途見「每個階段用哪些腳本」）
-├── examples/                        兩個跑完的 demo（無 PAD／有 PAD）
+│       └── 01_rtl_sim/ … 07_signoff/  各階段腳本（每個檔案的用途見「每個階段用哪些腳本」）
+├── examples/                        REFRACT 跑完的 demo（refract_core 無 PAD／refract_pad 有 PAD）
 ├── hooks/  types/                   /ic_flow 面板的程式（Claude Code plugin，選用）
 └── .claude-plugin/                  Claude Code plugin 安裝設定（選用）
 ```
