@@ -1,7 +1,6 @@
 ##############################################################################
 # constraints.sdc — IC Contest 原題風格（CBDK slow，單位 ns / pF / kOhm）
-# 來源：geofence 官方 geofence.sdc；REFRACT 官方 REFRACT.sdc 同樣結構
-# 用 $CLK_PORT / $PERIOD 取代寫死的名稱與週期（定義在 flow_config.tcl）
+# 用 $CLK_PORT、$PERIOD 與 I/O delay 變數取代寫死的值（都定義在 flow_config.tcl）
 ##############################################################################
 
 create_clock -name $CLK_PORT -period $PERIOD [get_ports $CLK_PORT]
@@ -13,11 +12,12 @@ set_clock_uncertainty  0.1   [all_clocks]   ;# skew + jitter 預留
 set_clock_latency      0.5   [all_clocks]   ;# 估計 clock tree 延遲
 
 # I/O 時序：相對於外部 launch / capture 的 clock edge
-# geofence 外部用 falling edge -> 加 -clock_fall；REFRACT 用 rising edge 並給 max 1 / min 0
+# 題目規定外部用 falling edge launch 時，每行加 -clock_fall
 set in_ports [remove_from_collection [all_inputs] [get_ports $CLK_PORT]]
-set_input_delay  -max 1 -clock $CLK_PORT $in_ports
-set_input_delay  -min 0 -clock $CLK_PORT $in_ports
-set_output_delay 1      -clock $CLK_PORT [all_outputs]
+set_input_delay  -max $IN_DELAY_MAX  -clock $CLK_PORT $in_ports
+set_input_delay  -min $IN_DELAY_MIN  -clock $CLK_PORT $in_ports
+set_output_delay -max $OUT_DELAY_MAX -clock $CLK_PORT [all_outputs]
+set_output_delay -min $OUT_DELAY_MIN -clock $CLK_PORT [all_outputs]
 
 # 環境：輸出負載 1（=1 pF，CBDK 的單位），輸入驅動電阻 0.1（=100 Ohm）
 set_load   1   [all_outputs]

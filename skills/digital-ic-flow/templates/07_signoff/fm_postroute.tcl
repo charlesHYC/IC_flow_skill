@@ -1,6 +1,5 @@
 ##############################################################################
 # fm_postroute.tcl — 階段 9b：Formality RTL vs 繞線後 netlist
-# 來源：geofence scripts/apr/formal.tcl
 # APR 會插 buffer、tie cell、改 clock tree；沿用 DC 的 SVF 讓 Formality 對上名字
 ##############################################################################
 source [file join [file dirname [info script]] flow_config.tcl]

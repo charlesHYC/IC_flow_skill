@@ -1,4 +1,6 @@
-# 實際踩過的坑（geofence／REFRACT／Design_compiler_lab）
+# 實際踩過的坑
+
+用例子設計驗證公版時真的遇到的錯誤與解法；括號裡的數字是當時的實測值，換設計會不同。
 
 格式：**症狀 → 原因 → 解法**。遇到錯誤先搜尋這份文件。
 
@@ -23,7 +25,7 @@
 - **SAED32 上 1 pF 輸出負載怎樣都修不掉** → 核心 cell 最大 max_capacitance 是 168 fF（NBUFFX32_RVT）。無 PAD 核心改用 20～50 fF；1 pF 應放在晶片 port，由 output PAD 驅動。
 - **SAED32：DC 乾淨，PT fast corner 卻大負 slack（單一 gate 延遲 7～9 ns）** → FF library 的 wire-load RC 在高扇出 net 上暴增。只對 SS library 合成時，DC 看不到這個問題。照 geofence 的做法：target 用 FF library、link 同時放 SS 與 FF、wire-load 用 SS 的 `ForQA`（mode top）、`set_dont_use *X0_RVT *X1_RVT`、`set_max_fanout 1.0`。（skill smoke test 實測：只用 SS target 時 fast setup 為 −6.5～−15.5 ns）
 - **PT 報 `SEL-005 Nothing matched for lib_spec` 在 set_wire_load_model** → wire-load 模型所在的 library（SS）沒放進 link_path。把它加在 link_path 最後面，不要排序：PT 會把 cell 連到 link_path 第一個符合的 library，排序後 typical corner 會被連到 SS（兩個 corner 的數字會完全一樣，這就是徵兆）。
-- **DC constraint 乾淨，PT 仍有 max_capacitance 違規（差一點點，例如 16.99 fF > 16 fF）** → PT 檢查時 pin 電容取 rise/fall 範圍的上限，DC 用標稱值（REFRACT 實測：同一條 net DC 15.99 fF、PT 17.62 fF，84 個 pin）。公版在 DC 記憶體內把 max_capacitance 收緊到 85%（SAED32 與 CBDK 都做，PDK 檔案不動）。
+- **DC constraint 乾淨，PT 仍有 max_capacitance 違規（差一點點，例如 16.99 fF > 16 fF）** → PT 檢查時 pin 電容取 rise/fall 範圍的上限，DC 用標稱值（REFRACT 實測：同一條 net DC 15.99 fF、PT 17.62 fF，84 個 pin）。公版在 DC 記憶體內把 max_capacitance 收緊到 85%（`dc_syn.tcl` 的 `MAXCAP_DERATE`，SAED32 與 CBDK 都做，PDK 檔案不動）。差距比 15% 大時要再調低：推很多 XNOR／XOR 的 net（乘法器）pin 電容上限比標稱值高約 45%，例：某設計 PAD 版 DC 26.3 fF、PT 35.0 fF（pin 電容 18.8 → 27.5 fF，走線 7.5 fF 兩邊相同），上限 32 fF，`MAXCAP_DERATE` 要設到 0.70。
 - **PT 報非同步 reset 的 recovery／removal 違規，DC 報告卻完全沒有** → DC 預設不分析 recovery／removal（`enable_recovery_removal_arcs` 是 false），看不到 reset 路徑，也不會幫高扇出的 reset 建 buffer tree。REFRACT 實測：約 600 個 DFF 的 `RST` 只有一顆 INVX8 推，fast corner recovery −3.26 ns。公版已 `set_app_var enable_recovery_removal_arcs true`。
 - **打開 recovery／removal 後，PT slow／typical 仍有 removal 違規** → DC 用 FF library 修 hold，但 removal 時間在 SS 最大（REFRACT：`RST` 只過一個反相器到 `RSTB`，slow −0.20 ns，609 個 DFF）。公版改成 `set_operating_conditions -max <FF> -max_library <FF> -min <SS> -min_library <SS>`：setup 用 FF、hold／removal 用 SS 分析。REFRACT 面積 17375 → 19844（+14%，多半是 reset 路徑的延遲 buffer）。
 - **reg-to-reg 差一點點（例如 −0.002 ns）** → `report_timing -significant_digits 4` 確認，再做 `compile_ultra -incremental`，或加強 `group_path -weight`。
@@ -61,6 +63,7 @@
 
 2026-11-12 用 geofence 跑 `USE_PAD=1` 全流程時遇到的問題，都已經寫進公版：
 
+- **PAD 版 APR 後 clock 線 max_transition 大量違規（例：`core_CLK` 0.81 ns > 0.25 ns），`clock_qor.rpt` 的 repeater 是 0，APR ECO 越修越多** → log 裡有 `CTS-053 The net 'core_CLK' will not be buffered because it is a pad net`：clock PAD 輸出的 net 直接接在 PAD 上，ICC2 不在 pad net 上建 clock tree，PAD 只能直接推所有 DFF。DFF 少時推得動、看不出問題（例：小設計可以過），多時就爆掉（例：619 個 DFF）。`apr_core.tcl` 在 CTS 前於 `pad_<clk>/DOUT` 後插一顆 buffer（`CLK_ROOT_BUF`）並設 `dont_touch`（`clock_opt` 會先移除 clock 線上原有的 buffer，不設就被拆掉），CTS 從它的輸出開始建 tree；例：repeater 0 → 15 顆。
 - **io.ndm 要建 40 分鐘以上（卡在 `CAPCORNER.frame` 的 FRAM-066 warning）** → CORNER 的 LEF 有 6 萬多個 OBS，預設的 frame 產生非常慢（geofence 實測 42 分鐘）。`build_ndm.tcl` 在 IO workspace 改用 `configure_frame_options -mode block_and_trim`，加上 `lib.physical_model.block_all used_layers` 和 `merge_metal_blockage true`，就降到幾秒（geofence `io_abstract_v2.tcl`）。
 - **`Error: Cannot create procedure named 'place_io' - existing command`** → `place_io` 是 ICC2 內建指令，自訂 proc 不能用這個名字（公版改叫 `pad_place_cell`）。
 - **某個階段失敗時 `run_stage.sh` 什麼都沒印就結束** → `set -e` 下工具 exit 1 會直接終止腳本，走不到最後的 FAIL 訊息（舊版公版 DC 失敗時就是這樣）。工具呼叫一律加 `|| true`，由最後的成功標記判定。標記要在**行首**（`grep "^DC_PASS"`）：DC 會把執行過的 tcl 指令印回 log，用子字串比對會把 `puts "DC_PASS"` 這行誤認為通過。
@@ -72,11 +75,21 @@
 - **PAD 模式 fast 閘級模擬跑到 tb timeout，但 STA 全部 PASS** → SDF 裡 `INTERCONNECT pad_clk/DOUT …/CLK` 是 2321 ns。clock 經過 clock PAD 後，PT 不再把後面的 net 當成 ideal clock net，write_sdf 會把 wire-load 估出的高扇出延遲寫進去；STA 本身用 ideal clock，所以看不出來。佈局前 PT 要 `set_ideal_network [get_pins pad_<clk>/DOUT]`。
 - **`icv_nettran: Cell 'CORNER' is not defined`** → IO 的 CDL 沒有 `CORNER`／`FILLER*` 的 subckt。LVS netlist 要把這兩種實例刪掉（GDS 裡的形狀照樣會被萃取）。`write_verilog` 不能同時下 `-include` 和 `-exclude`，而電源 PAD、SHFILL 又屬於 `physical_only_cells`，所以 `apr_finish.tcl` 是先全部寫出，再用 regsub 刪掉。
 - **`VDD_NS: Port 'VDDPAD' not declared`（NETTRAN-904 warning）** → CDL 裡電源 PAD 的打線點就是 VDD 本身，沒有獨立的 port。這只是 warning，可以忽略。
-- **電源 PAD 的打線 terminal 浮接（`check_pg_connectivity`：floating terminals = 2／net）** → LEF 的 `VDDPAD`（MRDL）和 PAD 內部的電源環不相連，是 library 本身的問題。`apr_core.tcl` 判定時只排除 terminals 這一項，其他浮接一樣要是 0。
-- **DRC：IO ring 內有 2000 多個錯誤（PO.W.2、M9.W.2、PO.W.4、PO.S.3…）** → 都是 IO cell 自己的 GDS 問題，geofence 單獨跑 VDD_NS 就有 14 個。`drc_pad_classify.py` 依位置把錯誤分成 io／stitch／core 三類，只要 core 有錯就 FAIL。
-- **DRC：M5.S.3.3 ×4 出現在電源 PAD 的接縫上** → 補丁是照 LEF 的 PG pin 位置畫的，但 IO GDS 在旁邊有 LEF 沒寫的寬金屬。這是 LEF/GDS 不一致的直接結果，分類器把它列為 `stitch`，並在報告中逐一列出座標。
-- **LVS：VDD、VSS、VDDIO、VSSIO 和所有輸入 port 在 layout 裡併成同一個 net；PAD 內的 ESD 二極體（`nd`／`pd`）全部 missing** → 用 PDK 的核心 LVS runset 萃取 IO GDS 的結果。**拿掉 PAD→ring 接線也一樣**：IO ring 自己就併成一個 net，只有核心 VDD 獨立（2026-11-12 對照實驗）。所以這不是公版接線造成的。`lvs_pad_classify.py` 會檢查三件事：所有 MOS／電阻都要對上、未配對的 instance 只能在 `Xpad_*`／`Xpg_*` 底下、出問題的 net 只能是 PG 或晶片 port。三項都成立才記為 `LVS_PAD_LIMITED`，並印出 PG 合併的 NOTE。**這不是 LVS PASS**，回報時要照實說明。
-- **要拿到真正乾淨的全晶片 DRC/LVS** → 需要 LEF、GDS、CDL 一致的 IO library（並搭配含 IO 層的 LVS runset），或另外修 IO cell（見 geofence `docs/apr_io_resolution_proposal.md`）。在那之前，核心的 signoff 用 `USE_PAD 0` 跑。
+2026-11-17 用 REFRACT 跑 `USE_PAD=1`，把全晶片 DRC／LVS 從「只剩 IO 相關錯誤」做到 `RESULTS: CLEAN`／`Final comparison result:PASS`。下面每一項都是單獨找出、單獨驗證過的原因。前 7 項是 IO library 本身的錯，由 `fix_io_lib.py`（pad 階段）產生修正版 library 到 `runs/iofix/`；PDK 原檔不動。每一項修正前都先確認原始幾何和預期一致，PDK 版本不同就直接中止。
+
+- **DRC：左右邊的 PAD 有幾千個 PO.W／PO.S／CO.S 錯誤** → 左右邊放的是轉 90 度的 `_NS` cell，cell 裡的多晶矽方向跟著轉錯，有方向性的規則全部報錯。左右邊改用同功能的 `_EW` cell（原始就是 300 寬 × 40 高）。`apr_pad_ring.tcl` 用 `set_reference` 換，`pad_tools.py` 也會產生 `_EW` 的 PAD model（繞線後 netlist 兩種都有）。
+- **DRC：所有 PAD 的 M9 打線條都報 M9.W.2** → PDK 的 DRC runset 用中間層金屬的 5 µm 上限檢查 M9，設計規則手冊（Table 13，MT.W.2）頂層金屬是 10 µm。`fix_io_lib.py` 寫一份改成 10 的 runset 副本，`run_icv_drc.sh` 在 PAD 模式用它。
+- **LVS：每個輸入 port 都和 VDDIO 併成同一個 net** → `I1025_NS／_EW` 的 PADIO M2 橫線直接穿過 VDDIO 的 M2 直線，是真的短路。M2 在 VDDIO 兩側斷開，用 VIA2＋M3 跨過去。
+- **LVS：VDD／VSS PAD 的 ESD 二極體報 swapped pins** → CDL 把 `nd`／`pd` 的兩端寫反（layout 是 pd：PAD→VDDIO、nd：VSSIO→PAD）。在 CDL 副本對調。
+- **DRC：PAD 內少量 VIA1.W、M2.W.2.1、M2.S.1** → 兩顆 via 疊成不合法形狀、M2 線端超出 via pad 0.001 µm、同 net M2 只差 0.036 µm。逐一修 GDS。
+- **核心電源接不上 PAD／接縫 M5.S.3.3** → LEF 只在接縫寫了 0.19 µm 的 pin，GDS 裡那個位置沒有對應的金屬；真正的電源是 PAD 內 2 µm 寬的 M4 垂直條（`gen_Buses`），LEF 沒寫。照 LEF 接會碰到別的 net。把這四條 M4 照 GDS 位置加進 LEF 副本，`pad_ring_to_core` 從 M4 條拉線到 core ring。
+- **晶片 LVS：輸入 PAD 裡的 level shifter 的 VDD／VSS 是浮接孤島（單顆 PAD LVS 卻會過）** → `I1025_NS` 的 level shifter M1 電源環沒有 via 接到 M4 電源條（`_EW` 版有）。單顆 PAD 是 top cell 時，同名文字把兩塊併起來，所以看不出來。在環的垂直邊（剛好在電源條正下方）補 VIA1／VIA2／兩顆 VIA3；兩顆 VIA3 是為了 VIA3.B.1，M2／M3 補小塊是為了最小面積。找法：ICV 的 layout netlist（`*.net.gz`）有每個元件的座標，看孤島的 MOS 在哪裡。
+- **LVS：VDD open，PAD 的 `R_EN`／`EN` 等 125 個閘極沒接到電源；ICC2 log 有 `OPT-200 No tie cell is available`、`ZRT-511`** → SAED32 的 `TIEH_RVT／TIEL_RVT` 在 library 裡是 `dont_use`、`dont_touch`，`add_tie_cells` 一顆都插不進去，`1'b1` 變成 `*Logic1*`。std cell 旁邊有電源軌還能接上，PAD 的 pin 離電源軌很遠就變成一段浮接的線。`apr_core.tcl` 在 `add_tie_cells` 前用 `set_attribute … dont_use false`／`dont_touch false` 解除（`set_dont_use … false` 會報 CMD-012）。這一項也影響 `USE_PAD 0`。
+- **LVS：VSS 和 VSSIO 在 layout 裡是同一個 net** → 這是真的：SAED32 沒有 deep N-well，核心和 IO 共用一塊 P 型基板，runset 的 `pwell = 整顆晶片 − nwell`，ptap 硬接到 pwell。核心的 VSS tap 和 PAD 的 VSSIO tap 都打在上面。試過把 runset 改成 soft connect，結果 PAD 自己有幾塊 VSS 也是靠 pwell 接起來的，改了反而 open，所以不採用。`run_icv_lvs.sh` 在 PAD 模式把 schematic 的 VSSIO 併到 VSS。**代價**：VSS 和 VSSIO 之間的金屬短路 LVS 抓不到。
+- **LVS：`52 untexted layout ports`、`Missing power/ground nets`** → port 的文字要落在 GDS 裡真的有金屬的地方。訊號 PAD：LEF 說 PADIO 打線 pin 在 MRDL，GDS 的打線金屬其實是 M9（沒有 MRDL）。terminal 仍放 MRDL（放到 M9 的話 router 會繞線過去，多出一百多個繞線 DRC），`apr_finish.tcl` 用專案的 layer map 副本加一行 `T 41 39`，把 MRDL 上的文字改寫到 M9PIN。電源 PAD 根本沒有打線金屬，`pad_pg_terminals` 把 VDD／VSS 的 terminal 放在 core ring 的 M7 上、VDDIO／VSSIO 放在電源 PAD 的 M4 電源條上。座標要對齊 0.001 µm 格點（否則 DRC off_grid）。
+- **`check_pg_connectivity` 的 floating terminals 不是 0** → 舊版公版把它當成 library 限制排除掉；有了 `pad_pg_terminals` 之後它就是 0，現在不排除，有浮接就 FAIL。
+- **LVS 失敗後再跑一次，結果沒變** → ICV 中途出錯（例：runset 語法錯）時不會覆寫舊的 `LVS_ERRORS`，腳本會讀到上一輪的結果。`run_icv_drc.sh`／`run_icv_lvs.sh` 執行前先刪掉舊結果。
+- **`drc_pad_classify.py`／`lvs_pad_classify.py`** → 現在只是診斷：FAIL 時依位置／instance 把錯誤分成 IO ring、接縫、核心，幫忙找問題在哪。它們不改變判定。
 
 ## Signoff
 
@@ -87,5 +100,6 @@
 - **`StarXtract: command not found`** → `/.bash_EDA` 沒有把 StarRC 放進 PATH；用絕對路徑 `/mnt/nfs/opt/EDA/synopsys/star-rcxt/cur/bin/StarXtract`。
 - **ECO 一直串 buffer 還是修不掉 max_cap** → 每輪都在同一個 pin 後面再插一顆小 buffer。依實際負載挑尺寸（X4/X8/X16/X32），已經是 ECO buffer 的就 `size_cell` 換大顆，不要再串一級（`apr_eco.tcl` 已經這樣做）。
 - **signoff_eco 回圈跑滿 4 輪還是 `STOP: not closed`，每輪都只剩同一顆 cell 的 max_cap 小幅超標** → 升一級（X0→X1）沒有用：SAED32 的 NAND2X0／X1、INVX0／X1、AO22X1 的 max_capacitance 都是 8 fF，要到 X2 才變成 16 fF。`apr_signoff_eco.tcl` 現在會直接挑輸出 max_capacitance 真的比較大的尺寸。每一輪要跑 finish→drc→lvs→starrc→pt_post，USE_PAD=1 時約 13 分鐘，白跑一輪的代價很高（2026-11-12 geofence USE_PAD=1 實測）。
+- **繞線後 PT 只有 fast corner hold 差幾 ps（例：-0.003 ns），signoff_eco 卻回 `PASS (nothing to do)`，回圈白跑到第 4 輪** → ICC2 用估計 RC 修 hold 時剛好過，StarRC 的 Cmin 再快一點就違規。舊版 signoff_eco 只讀 max_capacitance／max_transition 段落，看不到 `min_delay/hold`。現在會在違規 endpoint（FF 的 D pin）前插 `HOLD_BUF`（預設 NBUFFX2_RVT），PT 失敗但沒有可修項目時直接 FAIL，不再空轉（例：REFRACT USE_PAD=1）。
 - **StarRC 金屬溫度** → 沒有設定時是 25°C，報告要註明。
 - **工具 exit 0 不代表通過** → 一律讀 `RESULTS: CLEAN`、`Final comparison result:PASS`、`Verification SUCCEEDED`、slack 數值。

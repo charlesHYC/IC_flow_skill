@@ -1,0 +1,26 @@
+PAD_WRAPPER REFRACT_chip: 49 signal pads (22 in, 27 out)
+PAD_DELAY I1025_NS PADIO->DOUT rise/fall = 0.418/0.340 ns
+PAD_DELAY D4I1025_NS DIN->PADIO rise/fall = 1.231/1.365 ns (load 1000 fF)
+PAD_DELAY I1025_EW PADIO->DOUT rise/fall = 0.418/0.340 ns
+PAD_DELAY D4I1025_EW DIN->PADIO rise/fall = 1.231/1.365 ns (load 1000 fF)
+GDS I1025_NS    PADIO M2 strap crossed VDDIO M2 (x 3.13-3.36) -> M3 bridge
+GDS I1025_EW    PADIO M2 strap crossed VDDIO M2 (y 3.13-3.36) -> M3 bridge
+GDS I1025_NS    removed VIA12BAR_14 overlapping VIA12_0 (VIA1.W, VIA1.E.2)
+GDS I1025_EW    removed VIA12BAR_14 overlapping VIA12_2 (VIA1.W, VIA1.E.2)
+GDS I1025_EW    M2 wire end 151.489 -> 151.52, inside the via pad (M2.W.2.1)
+GDS D4I1025_EW  M2 wire end 151.489 -> 151.52, inside the via pad (M2.W.2.1)
+GDS VSS_NS      filled 0.036 um M2 gap at x 33.100-33.136 (M2.S.1/S.2/S.3.1); both sides on the same M1 rail
+GDS I1025_NS    level-shifter VDD M1 ring -> VDD M4 strap: added VIA1/VIA2/2xVIA3 stack at (1.142, 162.000)
+GDS I1025_NS    level-shifter VSS M1 ring -> VSS M4 strap: added VIA1/VIA2/2xVIA3 stack at (14.087, 162.500)
+CDL VDD_EW      dD14 nd -> anode VSSIO cathode VDD
+CDL VDD_EW      dD15 pd -> anode VDD cathode VDDIO
+CDL VDD_NS      dD14 nd -> anode VSSIO cathode VDD
+CDL VDD_NS      dD15 pd -> anode VDD cathode VDDIO
+CDL VSS_EW      dD9 nd -> anode VSSIO cathode VSS
+CDL VSS_EW      dD10 pd -> anode VSS cathode VDDIO
+CDL VSS_NS      dD9 nd -> anode VSSIO cathode VSS
+CDL VSS_NS      dD10 pd -> anode VSS cathode VDDIO
+DRC M9.W.2 max width 5 -> 10 um (design rule manual MT.W.2)
+LEF added 172 M4 power-strap ports (gen_Buses VDD/VDDIO/VSS/VSSIO, from GDS)
+FIX_IO_LIB_PASS
+PAD_PASS

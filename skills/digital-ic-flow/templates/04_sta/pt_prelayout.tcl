@@ -1,6 +1,5 @@
 ##############################################################################
 # pt_prelayout.tcl — 階段 4：PrimeTime 佈局前 STA（每個 corner 跑一次）
-# 來源：geofence scripts/saed32/primetime.tcl
 # 執行：FLOW_CORNER=slow pt_shell -f pt_prelayout.tcl
 # 會另外寫出該 corner 的 SDF，給階段 5 的閘級模擬使用
 ##############################################################################
@@ -35,10 +34,10 @@ set_wire_load_mode top
 source [file join [file dirname [info script]] \
     [expr {$USE_PAD ? "constraints_chip.sdc" : ($PROCESS eq "cbdk" ? "constraints.sdc" : "constraints_saed32.sdc")}]]
 # PAD 模式：晶片 port ↔ PAD PADIO 的 net 是打線，不是晶片內走線。PADIO 的 pin cap 約 2.4 pF，
-# 套 wire-load 的電阻會算出幾十 ns 的假延遲（geofence 實測 reset 路徑 -19 ns），所以電阻設 0。
+# 套 wire-load 的電阻會算出幾十 ns 的假延遲（例：某設計 reset 路徑 -19 ns），所以電阻設 0。
 # 只在佈局前（DC／佈局前 PT）需要；繞線後用 StarRC 的實際 RC。
 # clock 經過 clock PAD 後才進核心：佈局前 clock net 設成 ideal。沒有這行，PT 寫出的 SDF
-# 會把 wire-load 估的高扇出 clock net 延遲寫進去（geofence 實測 2.3 us，fast 閘級模擬失敗）
+# 會把 wire-load 估的高扇出 clock net 延遲寫進去（例：實測 2.3 us，fast 閘級模擬失敗）
 if {$USE_PAD} {
     set_resistance 0 [get_nets -of_objects [get_ports *]]
     set_ideal_network [get_pins pad_${CLK_PORT}/DOUT]

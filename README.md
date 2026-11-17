@@ -13,7 +13,7 @@
 | **`digital-ic-flow` skill** | 給 AI 助手看的「教材＋腳本範本」 | 問 AI 助手「下一步要做什麼？」「這個 DRC 錯誤是什麼意思？」「幫我寫 PrimeTime 腳本」，它會照這份教材回答，並用裡面的公版腳本幫你建專案、跑流程 |
 | **`/ic_flow` 面板**（選用） | 即時進度面板（目前只有 Claude Code 能用） | 看專案跑到哪一步、哪一步 PASS／FAIL、關鍵數字；點任一階段看白話說明 |
 
-> 腳本整理自實際做過的 lab（IC Contest 的 geofence、REFRACT），在 SAED32 教學製程與 CBDK_IC_Contest 上跑過，[完整流程的結果](#五分鐘體驗不用裝-eda-工具)放在 `examples/`。
+> 這是給任何 cell-based 數位 IC 設計用的教學公版：把腳本複製到自己的專案，照自己的設計一個階段一個階段修改。公版用兩個 IC Contest 題目當例子在 SAED32 教學製程上從頭跑過，[其中一個例子的完整結果](#五分鐘體驗不用裝-eda-工具)放在 `examples/`。
 
 ---
 
@@ -65,8 +65,8 @@ flowchart LR
 |---|---|---|
 | 做到哪 | 只有你的電路本體 | 你的電路＋外圍一圈 PAD 的完整晶片 |
 | 時序 | 不考慮 PAD | 輸入多約 0.4 ns、輸出推 1 pF 約 1.3 ns，**從 RTL 模擬就看得到** |
-| 晶片大小 | 小（例：240 µm） | 被 PAD 數量撐大（例：920 µm） |
-| DRC／LVS | 可以完全通過 | 最多到 `PAD_LIMITED`（見[限制](#需求與限制)） |
+| 晶片大小 | 依合成面積決定 | 被 PAD 數量撐大（例：49 個 PAD → 1200 µm） |
+| DRC／LVS | 可以完全通過 | 可以完全通過（IO library 先經 `fix_io_lib.py` 修正，見[限制](#需求與限制)） |
 | 適合 | 先把流程跑通 | 想看完整晶片長什麼樣子 |
 
 不確定的話，**兩種都跑來比較**。AI 助手每次開始跑流程前都會問你選哪一種。
@@ -75,13 +75,13 @@ flowchart LR
 
 ## 五分鐘體驗（不用裝 EDA 工具）
 
-`examples/` 裡放了兩個**已經跑完**的 geofence 專案，一個無 PAD、一個有 PAD。只要有 Python 3 就能看結果：
+`examples/` 裡放了一個例子設計（2026 IC Contest 的 REFRACT 題目）**已經跑完**的結果，一份無 PAD、一份有 PAD，兩份都是 `ALL_STAGES_PASS`。只要有 Python 3 就能看結果：
 
 ```bash
 git clone https://github.com/charlesHYC/IC_flow_skill.git
 cd IC_flow_skill
-python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/geofence_core
-python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/geofence_pad
+python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/refract_core
+python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/refract_pad
 ```
 
 你會看到像這樣的表格（有 PAD 版本，節錄）：
@@ -90,21 +90,20 @@ python3 skills/digital-ic-flow/templates/00_common/flow_dashboard.py examples/ge
 ┌──────────────────────────────────────────────┬─────────────┬──────────────────────────────────────────┬──────────┐
 │ Stage (steps)                                │ Status      │ Key numbers                              │ Time     │
 ├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
-│ PAD_planning (pad_wrapper, pad_delay_model)  │ PASS        │ pads 24, in 0.42/0.34, out 1.23/1.36 ns  │ 0:00     │
-│ RTL_coding (vcs_simulation)                  │ PASS        │                                          │ 0:02     │
-│ Synthesis (design_compiler_synthesis)        │ PASS        │ area 6013.8, setup +8.589 ns             │ 0:13     │
+│ PAD_planning (pad_wrapper, pad_delay_model)  │ PASS        │ pads 49, in 0.42/0.34, out 1.23/1.36 ns  │ 0:08     │
+│ Synthesis (design_compiler_synthesis)        │ PASS        │ area 23532.2, setup +0.205 ns            │ 0:30     │
+│ DRC (icv_drc)                                │ PASS        │ CLEAN                                    │ 6:54 x4  │
 │ ...                                          │             │                                          │          │
-│ DRC (icv_drc)                                │ PAD_LIMITED │ core 0, io_ring 2120, stitch 4           │ 3:37 x3  │
-│ LVS (icv_lvs_transistor)                     │ PAD_LIMITED │ MOS 25,640, RES 8 matched                │ 0:23 x2  │
-│ STA_postroute (primetime_spef)               │ PASS        │ setup +22.877 / hold +0.016 ns           │ 0:19 x2  │
-│ Gate_post (vcs_postroute_sdf)                │ PASS        │ SDF $removal warn 17/17                  │ 0:07     │
+│ LVS (icv_lvs_transistor)                     │ PASS        │ PASS                                     │ 0:41 x3  │
+│ STA_postroute (primetime_spef)               │ PASS        │ setup +37.179 / hold +0.000 ns           │ 0:20 x3  │
+│ Gate_post (vcs_postroute_sdf)                │ PASS        │ SDF $removal warn 619/619                │ 1:26     │
 └──────────────────────────────────────────────┴─────────────┴──────────────────────────────────────────┴──────────┘
-  ALL_STAGES_DONE_PAD_LIMITED  全部跑完；DRC／LVS 只剩 IO library 的問題，這不等於 PASS。
+  ALL_STAGES_PASS  全部階段通過。
 ```
 
-完整表格：[geofence_core](examples/geofence_core/flow_table.txt)（全部 PASS）、[geofence_pad](examples/geofence_pad/flow_table.txt)。表格每一欄的意思見[看懂結果](#看懂結果)。
+完整表格：[refract_core](examples/refract_core/flow_table.txt)、[refract_pad](examples/refract_pad/flow_table.txt)。表格每一欄的意思見[看懂結果](#看懂結果)。
 
-用 Claude Code 並裝了面板的話，輸入 `/ic_flow <你 clone 的路徑>/examples/geofence_pad`，就能在面板上點每個階段看說明和動畫。
+用 Claude Code 並裝了面板的話，輸入 `/ic_flow <你 clone 的路徑>/examples/refract_pad`，就能在面板上點每個階段看說明和動畫。
 
 ---
 
@@ -150,10 +149,10 @@ cp -r IC_flow_skill/skills/digital-ic-flow ~/.claude/skills/
 
 ### 第 1 步：準備好這些檔案
 
-| 你需要 | 例子（geofence） | 說明 |
+| 你需要 | 例子 | 說明 |
 |---|---|---|
-| RTL | `rtl/geofence.v` | 你的設計 |
-| testbench | `tb/tb.sv` | 比賽給的 tb 就可以 |
+| RTL | `rtl/MY_TOP.v` | 你的設計 |
+| testbench | `tb/tb.v` | 比賽給的 tb 就可以 |
 | 測資 | `patterns/` | tb 會讀的輸入／標準答案 |
 | tb 成功時印的字 | `ALL PASS` | 腳本用它判斷模擬有沒有過 |
 | 時脈 | port 名稱 `clk`、週期 30 ns | 比賽題目通常有規定 |
@@ -179,22 +178,26 @@ mkdir -p scripts
 cp <IC_flow_skill 的路徑>/skills/digital-ic-flow/templates/*/* scripts/
 ```
 
-**(2) 改這幾個檔案**。每個腳本開頭都有標「依設計修改」的區塊，只要改那裡：
+**(2) 改這幾個檔案**。共用的設計資訊只寫在 `flow_config.tcl` 一個地方；各階段跟設計有關的值放在腳本開頭標「依設計修改」的區塊，每個值都有註解說明是什麼、什麼時候要改。標 `←` 的值一定要換成你自己的：
 
 | 檔案 | 要改什麼 |
 |---|---|
-| `scripts/flow_config.tcl` | **總設定**，最重要（見下面） |
-| `scripts/run_rtl_sim.sh`、`scripts/run_gate_sim.sh` | tb 路徑 `TB`、tb 的 top `TOP`、測資 `PATTERNS`、成功字串 `PASS_MARKER`、`DESIGN` |
-| `scripts/constraints_saed32.sdc`（SAED32）或 `constraints.sdc`（CBDK） | 輸入／輸出延遲、輸出負載；比賽有規定就照規定 |
-| `scripts/run_icv_drc.sh`、`run_icv_lvs.sh`、`run_starrc.sh` | `DESIGN`、製程檔路徑 |
+| `scripts/flow_config.tcl` | **總設定**，最重要（見下面）。top 名稱、RTL 清單、I/O delay 只寫在這裡，SDC、APR 和各 `.sh` 腳本都讀它 |
+| `scripts/run_rtl_sim.sh`、`scripts/run_gate_sim.sh` | tb 路徑 `TB`、tb 的 top `TOP`、測資 `PATTERNS`、成功字串 `PASS_MARKER` |
+| `scripts/constraints_saed32.sdc`（SAED32）或 `constraints.sdc`（CBDK） | 輸出負載、clock uncertainty；I/O delay 的數字在 `flow_config.tcl` |
+| `scripts/dc_syn.tcl` | hold／removal 用哪個 corner 修（`DC_HOLD_CORNER`）、max_cap 收緊比例（`MAXCAP_DERATE`），檔頭有取捨說明 |
+| `scripts/apr_core.tcl` | die 大小 `DIE`（看合成面積決定）、I/O 餘裕、繞線修正參數 |
+| `scripts/run_icv_drc.sh`、`run_icv_lvs.sh`、`run_starrc.sh` | 製程檔路徑 |
 
 `flow_config.tcl` 最重要的幾行：
 
 ```tcl
-set DESIGN     geofence                       ;# 你的 top module 名稱
-set RTL_FILES  [list $PROJ/rtl/geofence.v]    ;# RTL 檔案
+set DESIGN     MY_TOP                         ;# 你的 top module 名稱（沒改的話 run_stage.sh 會提示）
+set RTL_FILES  [list $PROJ/rtl/$DESIGN.v]     ;# RTL 檔案，多個就列多個
 set CLK_PORT   clk                            ;# 時脈 port
 set PERIOD     30.0                           ;# 時脈週期（ns）
+set IN_DELAY_MAX 1.0 ; set IN_DELAY_MIN 0.0   ;# 輸入延遲（照題目的 SDC）
+set OUT_DELAY_MAX 1.0; set OUT_DELAY_MIN 0.0  ;# 輸出延遲
 set USE_PAD    0                              ;# 0 = 無 PAD，1 = 有 PAD
 set PROCESS    saed32                         ;# saed32 或 cbdk
 ```
@@ -203,7 +206,7 @@ set PROCESS    saed32                         ;# saed32 或 cbdk
 
 **(3) 載入 EDA 工具環境**：各學校／公司的方式不同，例如 `source /usr/cad/synopsys/CIC/...` 或 `module load ...`。確認 `vcs`、`dc_shell`、`fm_shell`、`pt_shell`、`icc2_shell`、`icv` 打得出來。`scripts/run_stage.sh` 第 8 行預設是 `source /.bash_EDA`，請改成你的方式。
 
-> 不想手動改的話，也可以請 AI 助手代勞：在 `my_project/` 裡啟動 `codex` 或 `claude`，說「用 digital-ic-flow 幫我把這個設計建成完整流程，設計叫 geofence，clock 是 clk、30 ns」。它會先問要不要上 PAD，再幫你複製、填好上面這些檔案。
+> 不想手動改的話，也可以請 AI 助手代勞：在 `my_project/` 裡啟動 `codex` 或 `claude`，說「用 digital-ic-flow 幫我把這個設計建成完整流程，top 叫 MY_TOP，clock 是 clk、30 ns」。它會先問要不要上 PAD，再幫你複製、填好上面這些檔案。
 
 ### 第 3 步：跑起來
 
@@ -215,7 +218,7 @@ bash scripts/run_stage.sh synthesis    # 例：跑合成
 
 `run_stage.sh` 會切到 `runs/<階段>/`、執行對應的工具和腳本、把輸出存成 `console.log`，最後在 log 裡找成功標記判定 PASS／FAIL。全部 16 個階段的名稱、各自用哪些 `.tcl`、想自己下工具指令怎麼下，見下一節[每個階段用哪些腳本](#每個階段用哪些腳本)。
 
-一次全部跑完（geofence 約 20–30 分鐘），遇到失敗會停下來：
+也可以一次跑完（中小型設計約 20–30 分鐘），遇到失敗會停在那一階段。新設計第一次跑通常會在某些階段失敗，這時看報告、改那一階段的腳本或設定，再從那一階段重跑：
 
 ```bash
 bash scripts/run_all.sh
@@ -261,7 +264,7 @@ bash scripts/run_all.sh
 
 | 檔案 | 做什麼 |
 |---|---|
-| `flow_config.tcl` | **總設定**。設計名稱、RTL、時脈、週期、要不要上 PAD、製程與 library 路徑、三個 corner 的對照表。所有 `.tcl` 第一行都會讀它，換設計主要改這一個檔 |
+| `flow_config.tcl` | **總設定**。設計名稱、RTL、時脈、週期、I/O delay、要不要上 PAD、製程與 library 路徑、三個 corner 的對照表。所有 `.tcl` 第一行都會讀它，SDC、APR、`.sh` 腳本也從這裡讀共用的值，換設計先改這一個檔 |
 | `run_stage.sh` | 單一階段的入口：切到 `runs/<階段>/`、執行工具、存 log、找成功標記判定 PASS／FAIL；`run_stage.sh status` 印出流程表格 |
 | `run_all.sh` | 依序跑完所有階段，包含修正回圈；遇到失敗會停 |
 | `flow_dashboard.py` | 讀 `runs/` 裡的狀態檔，印出流程表格（也提供 `/ic_flow` 面板用的資料） |
@@ -283,6 +286,7 @@ bash scripts/run_all.sh
 | 檔案 | 做什麼 |
 |---|---|
 | `pad_tools.py` | `wrapper`：讀 RTL 的 port，產生包住你設計的晶片外殼 `<DESIGN>_chip.v`（每個 port 接一顆 PAD）和 PAD 擺放計畫；`padmodel`：從 IO library 查表算出 PAD 延遲，寫成模擬用的 PAD model |
+| `fix_io_lib.py` | 從製程原檔產生修正版 SAED32 IO library（GDS、CDL、LEF）和 DRC 規則檔副本，修掉 PAD 本身的錯誤；製程原檔不動，每一項修正的原因寫在檔頭 |
 | `constraints_chip.sdc` | 晶片版的時序約束：port 在 PAD 外側、輸出推 1 pF 板級負載。之後合成、STA、APR 都用它取代核心版約束 |
 
 產出：`runs/pad/<DESIGN>_chip.v`、`io_pad_sim.v`、`pad_plan.tcl`　　成功標記：`PAD_PASS`
@@ -333,8 +337,8 @@ cd runs/rtl_sim && bash ../../scripts/run_rtl_sim.sh
 
 | 檔案 | 做什麼 |
 |---|---|
-| `dc_syn.tcl` | 主腳本：設定 library → 讀 RTL → 套時序約束 → compile → 報告 → 寫出 netlist 等檔案 → 檢查沒有時序與設計規則違規 |
-| `constraints_saed32.sdc` | SAED32 用的時序約束：時脈、輸入／輸出延遲、負載（單位 ns、fF） |
+| `dc_syn.tcl` | 主腳本：設定 library → 讀 RTL → 套時序約束 → compile → 報告 → 寫出 netlist 等檔案 → 檢查沒有時序與設計規則違規。檔頭可調 hold／removal 用哪個 corner 修、max_cap 收緊比例 |
+| `constraints_saed32.sdc` | SAED32 用的時序約束：時脈、輸入／輸出延遲（數字來自 `flow_config.tcl`）、負載（單位 ns、fF） |
 | `constraints.sdc` | CBDK_IC_Contest 用的時序約束（比賽原題風格，單位 ns、pF） |
 
 產出：`<top>_syn.v`（netlist）、`.ddc`、`.sdc`、`.sdf`、`.svf`（給 Formality）　　成功標記：`DC_PASS`
@@ -427,7 +431,7 @@ cd runs/gate_sim && bash ../../scripts/run_gate_sim.sh
 | 檔案 | 做什麼 | 在哪跑 | 成功標記 |
 |---|---|---|---|
 | `build_ndm.tcl` | 把標準元件的時序檔（.db）和外框檔（LEF）打包成 ICC2 用的 library（NDM） | `runs/ndm`，用 `icc2_lm_shell` | `NDM_PASS` |
-| `apr_core.tcl` | 主流程：floorplan → 電源網路 → 擺放 → 時脈樹（CTS）→ 繞線。每一步存一個 block，出錯可從上一步重來 | `runs/apr` | `APR_ROUTED` |
+| `apr_core.tcl` | 主流程：floorplan → 電源網路 → 擺放 → 時脈樹（CTS）→ 繞線（含殘留 DRC 的修正回圈）。每一步存一個 block，出錯可從上一步重來。檔頭要依設計改 die 大小 | `runs/apr` | `APR_ROUTED` |
 | `apr_pad_ring.tcl` | 有 PAD 時由 `apr_core.tcl` 自動呼叫：算 die 大小、擺 PAD 和角落元件、把 PAD 電源接到核心電源環。不用單獨執行 | — | — |
 | `apr_eco.tcl` | 讀報告找出推不動負載的訊號（max_cap／max_transition 違規），自動插 buffer 修好 | `runs/apr` | `APR_PASS` |
 | `apr_finish.tcl` | 補 filler 元件，寫出 GDS 版圖、兩份 netlist（`routed.v` 給時序、`routed_pg.v` 含電源給 LVS）、DEF | `runs/finish` | `FINISH_PASS` |
@@ -454,18 +458,18 @@ cd runs/finish && icc2_shell -f ../../scripts/apr_finish.tcl && cd ../..
 > - 還會跑天線效應（antenna）、金屬密度、ERC 等更多檢查。
 > - `apr_drc_patch.tcl` 這種「用腳本補金屬」是針對這套教學製程的特例。業界通常是讓 APR 工具重新繞線，或和晶圓廠確認後申請豁免（waiver），很少直接用腳本改版圖。
 > - 規則檔（runset）由晶圓廠提供，原則上不能改。`make_lvs_runset.sh` 只修正檔名、路徑和幾個新版 ICV 不相容的寫法，因為這套教學製程附的範例規則檔寫死了原作者機器上的設定；而且它改的是副本，原檔不動。
-> - `PAD_LIMITED` 在業界不會被接受：PAD library 有問題要請廠商修正，不能帶著錯誤下線。
+> - PAD library 本身有錯時，業界是請廠商修正後重新發佈，不會自己改。`fix_io_lib.py` 修 SAED32 io_std 的錯誤只是因為這套教學製程沒有人會再更新它；它改的是副本，每一項都寫明理由。
 
 | 檔案 | 做什麼 |
 |---|---|
 | `run_icv_drc.sh` | 用製程的 DRC 規則檢查整張 GDS，結果要 `CLEAN` |
-| `drc_pad_classify.py` | 有 PAD 時由上面自動呼叫：把錯誤分成「PAD library 本身的」和「你的電路的」，只有前者就記為 `PAD_LIMITED` |
+| `drc_pad_classify.py` | 有 PAD 且 DRC 失敗時自動呼叫：依位置把錯誤分成 IO ring、PAD 接縫、核心三類，幫你找問題在哪（只是診斷，不改變判定） |
 | `apr_drc_patch.tcl` | **修正回圈**：DRC 抓到 M1 金屬太細的小錯時，在 ICC2 裡自動補金屬。跑完要重跑 `apr_finish.tcl` 和 DRC |
 | `run_icv_lvs.sh` | 把 netlist 轉成電晶體層級電路，和版圖萃取出的電晶體逐一比對 |
 | `make_lvs_runset.sh` | 由上面自動呼叫：複製製程的 LVS 規則檔，改掉幾個不相容的地方（原檔不動） |
-| `lvs_pad_classify.py` | 有 PAD 且 LVS 失敗時自動呼叫：確認不一致只在電源網路和 PAD 裡，就記為 `PAD_LIMITED` |
+| `lvs_pad_classify.py` | 有 PAD 且 LVS 失敗時自動呼叫：列出沒對上的元件和 net 在核心還是 PAD 裡（只是診斷，不改變判定） |
 
-成功標記：DRC `DRC_PASS`、LVS `LVS_PASS`（有 PAD 時最多到 `DRC_PAD_LIMITED`、`LVS_PAD_LIMITED`）
+成功標記：DRC `DRC_PASS`、LVS `LVS_PASS`（有沒有 PAD 都一樣）
 
 ```bash
 cd runs/drc && bash ../../scripts/run_icv_drc.sh && cd ../..
@@ -547,7 +551,6 @@ cd runs/apr && icc2_shell -f ../../scripts/apr_signoff_eco.tcl && cd ../..
 | `PASS` | 報告確認通過 | 繼續下一步 |
 | `FAIL` | 報告裡有問題 | 看 log，見[卡關了怎麼辦](#卡關了怎麼辦) |
 | `RUNNING` | 正在跑 | 等 |
-| `PAD_LIMITED` | 只有 PAD 模式會出現：你的電路沒問題，錯誤都在 PAD library 裡 | **這不是 PASS**，但已經是這套教學製程能做到的最好結果 |
 | `-` | 還沒跑 | |
 | `skip` | 無 PAD 模式跳過 PAD 規劃 | |
 | `not needed` | 修正回圈不需要跑 | |
@@ -586,8 +589,8 @@ cd runs/apr && icc2_shell -f ../../scripts/apr_signoff_eco.tcl && cd ../..
 **Q：可以用在比賽嗎？**
 IC Contest 通常只評到第 5 步（RTL 模擬＋合成後閘級模擬），第 6–9 步是延伸練習。比賽用 CBDK_IC_Contest 製程時，把 `PROCESS` 設成 `cbdk`。
 
-**Q：`PAD_LIMITED` 是我做錯了嗎？**
-不是。SAED32 教學製程的 PAD library 自己的版圖檔和規格檔彼此不一致，加 PAD 的晶片一定會有這些錯誤。腳本會幫你確認錯誤都在 PAD 裡、你的電路是乾淨的。要完全乾淨的 DRC／LVS，用無 PAD 模式。
+**Q：SAED32 的 PAD library 不是有錯嗎？有 PAD 也能過 DRC／LVS？**
+可以。SAED32 io_std 的 PAD 有幾處版圖、電路網表、LEF 彼此不一致（例如輸入 PAD 裡有一條線和 VDDIO 短路、電源 PAD 的二極體方向寫反）。`pad` 階段的 `fix_io_lib.py` 會產生修正版 library（製程原檔不動），每一項的原因寫在它的檔頭和 [`pitfalls.md`](skills/digital-ic-flow/references/pitfalls.md)「PAD」一節。有一個代價：LVS 把 VSS 和 VSSIO 當成同一個 net（兩者在矽片上共用基板），所以這兩者之間的金屬短路抓不到。
 
 **Q：看不懂縮寫（STA、CTS、SDF…）？**
 看 [`glossary.md`](skills/digital-ic-flow/references/glossary.md)，每個縮寫都有全名和白話解釋；或直接問 AI 助手「SDF 是什麼？」。
@@ -611,7 +614,7 @@ IC Contest 通常只評到第 5 步（RTL 模擬＋合成後閘級模擬），�
 
 **已知限制**
 - 有 PAD 模式只支援 SAED32（CBDK_IC_Contest 沒有 PAD library）。
-- 有 PAD 模式的 DRC／LVS 最多到 `PAD_LIMITED`（原因見[常見問題](#常見問題)與 [`pitfalls.md`](skills/digital-ic-flow/references/pitfalls.md)）。
+- 有 PAD 模式的 LVS 把 VSS 和 VSSIO 視為同一個 net（共用基板），兩者之間的短路抓不到（見[常見問題](#常見問題)）。
 - 還沒實測過：`PROCESS cbdk` 用本公版跑完全流程、雙向（inout）PAD、`io_std` 以外的 PAD library。
 
 ### 檔案說明

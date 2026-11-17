@@ -1,4 +1,0 @@
-PAD_WRAPPER geofence_chip: 24 signal pads (22 in, 2 out)
-PAD_DELAY I1025_NS PADIO->DOUT rise/fall = 0.418/0.340 ns
-PAD_DELAY D4I1025_NS DIN->PADIO rise/fall = 1.231/1.365 ns (load 1000 fF)
-PAD_PASS

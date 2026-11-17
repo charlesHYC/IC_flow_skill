@@ -1,0 +1,29 @@
+
+  REFRACT design flow — USE_PAD 0 (core only)   top=REFRACT
+┌──────────────────────────────────────────────┬─────────────┬──────────────────────────────────────────┬──────────┐
+│ Stage (steps)                                │ Status      │ Key numbers                              │ Time     │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ PAD_planning (pad_wrapper, pad_delay_model)  │ skip        │                                          │          │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ RTL_coding (vcs_simulation)                  │ PASS        │                                          │ 0:16     │
+│ Synthesis (design_compiler_synthesis)        │ PASS        │ area 19978.0, setup +3.735 ns            │ 0:25     │
+│ Formality (function_checking)                │ PASS        │                                          │ 0:15     │
+│ STA_prelayout (primetime_3corner)            │ PASS        │ setup +3.735 / hold +0.076 ns            │ 0:16     │
+│ Gate_sim (vcs_sdf_simulation)                │ PASS        │ SDF $removal warn 619/619                │ 0:48     │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ NDM (icc2_library_build)                     │ PASS        │                                          │ 0:06     │
+│ APR (floorplan_place_cts_route)              │ PASS        │                                          │ 4:09     │
+│ APR_ECO (maxcap_transition_fix)              │ PASS        │ buffers +40                              │ 0:34     │
+│ Finish (filler_gds_netlist)                  │ PASS        │                                          │ 0:21 x5  │
+│ DRC_patch (m1_patch) *                       │ PASS        │ M1 patched 38 / 38                       │ 0:14     │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ DRC (icv_drc)                                │ PASS        │ CLEAN                                    │ 0:19 x5  │
+│ LVS (icv_lvs_transistor)                     │ PASS        │ PASS                                     │ 0:22 x4  │
+│ PEX (starrc_extraction)                      │ PASS        │ SPEF x3 corners                          │ 3:52 x4  │
+│ STA_postroute (primetime_spef)               │ PASS        │ setup +36.059 / hold +0.006 ns           │ 0:20 x4  │
+│ Signoff_ECO (sizing_buffering) *             │ PASS        │ cells changed 1                          │ 0:20 x3  │
+│ Formality_post (routed_vs_rtl)               │ PASS        │                                          │ 0:14     │
+│ Gate_post (vcs_postroute_sdf)                │ PASS        │ SDF $removal warn 619/619                │ 0:58     │
+└──────────────────────────────────────────────┴─────────────┴──────────────────────────────────────────┴──────────┘
+  ALL_STAGES_PASS  全部階段通過。
+  * = 修正回圈（上一步發現問題才會跑）   xN = 這一輪跑了 N 次

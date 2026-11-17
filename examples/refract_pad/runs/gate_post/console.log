@@ -1,0 +1,5 @@
+PAD_SIMNET wrote chip_sim.v
+SDF_NOTE slow: removal-check warnings=619 
+PAD_SIMNET wrote chip_sim.v
+SDF_NOTE fast: removal-check warnings=619 
+GATE_SIM_PASS

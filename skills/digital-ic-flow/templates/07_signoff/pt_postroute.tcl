@@ -1,6 +1,5 @@
 ##############################################################################
 # pt_postroute.tcl — 階段 9a：繞線後 STA（routed netlist + StarRC SPEF）
-# 來源：REFRACT pt_starrc_50ff.tcl
 # 執行：FLOW_CORNER=slow pt_shell -f pt_postroute.tcl
 # 與佈局前的差別：propagated clock（真的 clock tree）、實際 RC、不用 wire-load
 ##############################################################################

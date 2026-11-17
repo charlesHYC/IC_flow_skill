@@ -89,4 +89,3 @@
 | **ESD** | Electrostatic Discharge | 靜電放電；ESD 二極體是防靜電的保護元件 |
 | **WB／FC** | Wire Bond／Flip Chip | 兩種封裝方式：打線／覆晶；SAED32 io_std 兩種都有（`_wb`、`_fc`） |
 | **HSTL／SSTL** | High-Speed Transceiver Logic／Stub Series Terminated Logic | 高速記憶體介面的 IO 標準（SAED32 io_sp） |
-| **PAD_LIMITED** | 本 skill 自訂的判定 | 核心區 DRC 0、電晶體全對上，剩下的錯誤只在 IO library 內；**不等於 PASS** |

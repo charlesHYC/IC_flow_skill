@@ -3,13 +3,11 @@
 
   python3 lvs_pad_classify.py <TOP>.LVS_ERRORS
 
-SAED32 io_std + PDK 的核心 LVS runset 比對全晶片時，PAD 內部會對不上（PG pin LEF/GDS
-不一致、ESD 二極體沒被萃取）。這支程式檢查「問題是不是只在 PAD 裡」：
-  1. 所有 MOS / 電阻都要配對成功（unmatched = 0）——核心的電晶體全部對上
-  2. 沒配對的 instance 只能在 PAD 實例底下（Xpad_* / Xpg_*）
-  3. 沒配對的 schematic net 只能是 PG net（VDD/VSS/VDDIO/VSSIO）或晶片 port
-     （port 只接 PAD 的 PADIO，PAD 裡的問題會一路影響到這裡）
-全部成立 → 印 LVS_PAD_LIMITED（不是 PASS）；否則 FAIL。結果寫到 lvs_classified.rpt。
+LVS 沒通過時，幫忙判斷問題在核心還是在 PAD（只印診斷，不決定 PASS／FAIL）：
+  1. 所有 MOS / 電阻是否都配對成功（unmatched = 0）——核心的電晶體全部對上
+  2. 沒配對的 instance 是否只在 PAD 實例底下（Xpad_* / Xpg_*）
+  3. 沒配對的 schematic net 是否只有 PG net（VDD/VSS/VDDIO/VSSIO）或晶片 port
+都成立時印 LVS_DIAG（問題集中在 PAD／電源接線）；否則列出核心的問題。結果寫到 lvs_classified.rpt。
 """
 import re, sys
 
@@ -60,7 +58,7 @@ for n in sorted(sch_nets):
     elif n not in PG and not re.match(r"^[A-Za-z_]\w*(\[\d+\])?$", n):
         problems.append("unexpected net: " + n)
 notes.append("schematic nets in connection errors: %s" % " ".join(sorted(sch_nets)))
-# PG 之間短在一起要特別列出（回報時要說明，不能只寫 PAD_LIMITED）
+# PG 之間短在一起要特別列出
 merged = sorted(PG & sch_nets)
 if len(merged) > 1:
     notes.append("NOTE: PG nets %s appear in the same connection-error group (possible PG short in layout)" % merged)
@@ -73,4 +71,4 @@ if problems:
     sys.exit(1)
 for n in notes:
     if n.startswith("NOTE"): print(n)
-print("LVS_PAD_LIMITED: all MOS/RES matched; mismatches only inside PAD cells / on PG nets and chip ports")
+print("LVS_DIAG: all MOS/RES matched; mismatches only inside PAD cells / on PG nets and chip ports")

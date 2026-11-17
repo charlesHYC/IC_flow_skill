@@ -1,0 +1,190 @@
+=== pad 19:20:20
+FIX_IO_LIB_PASS
+PAD_PASS
+pad PASS
+=== rtl_sim 19:20:28
+rtl RI=15 PASS
+ALL PASS
+rtl_sim PASS
+=== synthesis 19:20:57
+synthesis PASS
+=== formality 19:21:27
+formality PASS
+=== sta 19:21:43
+STA PASS
+=== gate_sim 19:22:00
+SDF_NOTE fast: removal-check warnings=619 
+GATE_SIM_PASS
+gate_sim PASS
+=== ndm 19:23:23
+ndm PASS
+=== apr 19:23:31
+apr PASS
+=== eco 19:28:36
+eco PASS
+=== finish 19:29:08
+finish PASS
+=== drc 19:29:36
+DRC_CLASSIFY io_ring=0 () stitch=0 () core=49 (M1.S.9 M1.W.2.1)
+DRC FAIL: errors inside core / PAD-to-core area, see drc_classified.rpt
+FAIL: marker 'DRC_PASS' not found in <proj>/runs/drc
+=== drc_patch 19:36:28
+drc_patch PASS
+=== finish 19:36:43
+finish PASS
+=== drc 19:37:11
+NOT EXECUTED rules: 1
+DRC_PASS
+drc PASS
+=== lvs 19:44:07
+wrote lvs_local.rs
+LVS_PASS
+lvs PASS
+=== starrc 19:44:47
+SPEF fast OK
+STARRC_PASS
+starrc PASS
+=== pt_post 19:49:00
+POST STA FAIL slow
+POST STA FAIL typical
+POST STA FAIL fast
+=== signoff_eco 19:49:20
+signoff_eco PASS
+=== finish 19:49:48
+finish PASS
+=== drc 19:50:16
+NOT EXECUTED rules: 1
+DRC_PASS
+drc PASS
+=== lvs 19:57:12
+wrote lvs_local.rs
+LVS_PASS
+lvs PASS
+=== starrc 19:57:53
+SPEF fast OK
+STARRC_PASS
+starrc PASS
+=== pt_post 20:02:04
+POST STA FAIL slow
+POST STA FAIL typical
+POST STA FAIL fast
+=== signoff_eco 20:02:25
+signoff_eco PASS
+=== finish 20:02:54
+finish PASS
+=== drc 20:03:22
+NOT EXECUTED rules: 1
+DRC_PASS
+drc PASS
+=== lvs 20:10:16
+wrote lvs_local.rs
+LVS_PASS
+lvs PASS
+=== starrc 20:10:57
+SPEF fast OK
+STARRC_PASS
+starrc PASS
+=== pt_post 20:15:08
+POST STA PASS
+SIGNOFF CLOSED after 2 signoff_eco loop(s)
+=== fm_post 20:15:28
+fm_post PASS
+=== gate_post 20:15:49
+SDF_NOTE fast: removal-check warnings=619 
+GATE_SIM_PASS
+gate_post PASS
+ALL_STAGES_PASS
+DC_SLACK setup=0.204891 cell_area=23532.209980
+STA_SLACK fast setup=0.204895 hold=0.056546
+STA_SLACK slow setup=38.030510 hold=0.223327
+STA_SLACK typical setup=39.919018 hold=0.133206
+POSTROUTE_SLACK fast setup=46.063568 hold=0.000045
+POSTROUTE_SLACK slow setup=37.178921 hold=0.244764
+POSTROUTE_SLACK typical setup=42.716862 hold=0.095907
+            # 已經是 ECO buffer 還推不動 → 直接換大顆，不要再串一級
+ECO buffer u_core/mult_18/ZBUF_298_inst_1492/Y -> NBUFFX4_RVT (load 16.08 fF)
+ECO inserted 1 buffers
+DRC_PATCH: 49 M1 error boxes
+PATCH M1.S.9 u_core/square_x_regx54x/CLK net=u_core/ZCTSNET_5 box={{485.206 500.608} {485.429 500.76}}
+PATCH M1.S.9 u_core/square_x_regx54x/CLK net=u_core/ZCTSNET_5 box={{485.206 500.608} {485.429 500.76}}
+PATCH M1.W.2.1 u_core/mult_18/U2691/A2 net=u_core/mult_18/n3038 box={{473.705 558.217} {473.964 558.368}}
+PATCH M1.W.2.1 u_core/mult_18/U2679/A2 net=u_core/mult_18/n3034 box={{514.441 569.728} {514.7 569.879}}
+PATCH M1.W.2.1 u_core/U1118/A1 net=u_core/N119 box={{397.249 476.077} {397.417 476.247}}
+PATCH M1.W.2.1 u_core/U1119/A1 net=u_core/n73 box={{403.633 474.617} {403.801 474.787}}
+PATCH M1.W.2.1 u_core/U1114/A1 net=u_core/copt_net_4705 box={{406.673 474.617} {406.841 474.787}}
+PATCH M1.W.2.1 u_core/U1092/A1 net=u_core/n67 box={{407.831 462.701} {407.999 462.871}}
+PATCH M1.W.2.1 u_core/U1087/A1 net=u_core/n2284 box={{408.801 464.585} {408.969 464.755}}
+PATCH M1.W.2.1 u_core/U2581/A1 net=u_core/n2309 box={{424.551 466.045} {424.719 466.215}}
+PATCH M1.W.2.1 u_core/U2584/A1 net=u_core/n2006 box={{424.703 471.273} {424.871 471.443}}
+PATCH M1.W.2.1 u_core/U2575/A1 net=u_core/n2308 box={{427.801 482.765} {427.969 482.935}}
+PATCH M1.W.2.1 u_core/U2577/A1 net=u_core/n2308 box={{428.561 474.617} {428.729 474.787}}
+PATCH M1.W.2.1 u_core/U2571/A1 net=u_core/n2308 box={{429.625 482.765} {429.793 482.935}}
+PATCH M1.W.2.1 u_core/U2573/A1 net=u_core/n2308 box={{431.449 482.765} {431.617 482.935}}
+PATCH M1.W.2.1 u_core/U2569/A1 net=u_core/n2308 box={{431.449 484.649} {431.617 484.819}}
+PATCH M1.W.2.1 u_core/U2579/A1 net=u_core/n2308 box={{431.847 476.077} {432.015 476.247}}
+PATCH M1.W.2.1 u_core/U2567/A1 net=u_core/n2308 box={{436.921 479.421} {437.089 479.591}}
+PATCH M1.W.2.1 u_core/U2565/A1 net=u_core/n2308 box={{440.113 481.305} {440.281 481.475}}
+PATCH M1.W.2.1 u_core/U2563/A1 net=u_core/n2308 box={{442.089 481.305} {442.257 481.475}}
+PATCH M1.W.2.1 u_core/U2561/A1 net=u_core/n2308 box={{445.889 479.421} {446.057 479.591}}
+PATCH M1.W.2.1 u_core/U2559/A1 net=u_core/n2308 box={{448.169 481.305} {448.337 481.475}}
+PATCH M1.W.2.1 u_core/U2555/A1 net=u_core/n2307 box={{453.945 481.305} {454.113 481.475}}
+PATCH M1.W.2.1 u_core/U2557/A1 net=u_core/n2307 box={{455.009 479.421} {455.177 479.591}}
+PATCH M1.W.2.1 u_core/U2553/A1 net=u_core/n2307 box={{458.657 481.305} {458.825 481.475}}
+PATCH M1.W.2.1 u_core/U2551/A1 net=u_core/n2307 box={{459.721 486.109} {459.889 486.279}}
+PATCH M1.W.2.1 u_core/U2527/A1 net=u_core/n2625 box={{462.609 462.701} {462.777 462.871}}
+PATCH M1.W.2.1 u_core/U2549/A1 net=u_core/n2649 box={{466.713 484.649} {466.881 484.819}}
+PATCH M1.W.2.1 u_core/U2539/A1 net=u_core/n2307 box={{466.713 486.109} {466.881 486.279}}
+PATCH M1.W.2.1 u_core/U2547/A1 net=u_core/n2307 box={{468.841 486.109} {469.009 486.279}}
+PATCH M1.W.2.1 u_core/U2545/A1 net=u_core/n2307 box={{471.121 487.993} {471.289 488.163}}
+PATCH M1.W.2.1 u_core/U2541/A1 net=u_core/n2307 box={{471.273 491.337} {471.441 491.507}}
+PATCH M1.W.2.1 u_core/U2543/A1 net=u_core/n2307 box={{472.793 486.109} {472.961 486.279}}
+PATCH M1.W.2.1 u_core/product_hold_regx2x/CLK net=u_core/ZCTSNET_1 box={{479.177 463.824} {479.359 463.976}}
+PATCH M1.W.2.1 u_core/sub_0_root_sub_0_root_add_23/ctmTdsLR_2_7172/A1 net=u_core/sub_0_root_sub_0_root_add_23/B[4] box={{518.089 464.585} {518.257 464.755}}
+PATCH M1.W.2.1 u_core/sub_0_root_sub_0_root_add_22/ctmTdsLR_1_1402/A1 net=u_core/sub_0_root_sub_0_root_add_22/B[8] box={{529.337 469.389} {529.505 469.559}}
+PATCH M1.W.2.1 u_core/sub_0_root_sub_0_root_add_23/ctmTdsLR_1_1403/A1 net=u_core/sub_0_root_sub_0_root_add_23/B[8] box={{530.857 479.421} {531.025 479.591}}
+PATCH M1.W.2.1 u_core/U1091/A1 net=u_core/N147 box={{399.377 459.357} {399.545 459.527}}
+PATCH M1.W.2.1 u_core/U1077/A1 net=u_core/N147 box={{408.041 459.357} {408.209 459.527}}
+PATCH M1.W.2.1 u_core/ctmTdsLR_1_5557/A1 net=u_core/root_bit[7] box={{419.897 429.261} {420.065 429.431}}
+PATCH M1.W.2.1 u_core/U2607/A1 net=u_core/n2692 box={{448.111 456.013} {448.279 456.183}}
+PATCH M1.W.2.1 u_core/U2611/A1 net=u_core/n2697 box={{448.929 456.013} {449.097 456.183}}
+PATCH M1.W.2.1 u_core/U804/A1 net=u_core/n61 box={{451.759 441.177} {451.927 441.347}}
+PATCH M1.W.2.1 u_core/ctmTdsLR_1_2446/A1 net=u_core/n59 box={{459.055 442.637} {459.223 442.807}}
+PATCH M1.W.2.1 u_core/U2619/A1 net=u_core/state[2] box={{459.873 442.637} {460.041 442.807}}
+PATCH M1.W.2.1 u_core/ctmTdsLR_1_2445/A1 net=u_core/n59 box={{461.031 445.981} {461.199 446.151}}
+PATCH M1.W.2.1 u_core/U798/A1 net=u_core/state[2] box={{461.545 441.177} {461.713 441.347}}
+PATCH M1.W.2.1 u_core/U1713/A1 net=u_core/n2749 box={{462.855 457.897} {463.023 458.067}}
+PATCH M1.W.2.1 u_core/U2617/A1 net=u_core/n2705 box={{463.217 461.241} {463.385 461.411}}
+DRC_PATCH: patched 49 / 49
+SIZE u_core/copt_h_inst_7733 NBUFFX4_RVT -> NBUFFX8_RVT
+BUFFER u_core/ZBUF_61_inst_7675/Y (DELLN1X2_RVT has no larger size)
+PG_FIX VDD: 8 floating rails, adding stacked vias
+PG_FIX VSS: 8 floating rails, adding stacked vias
+
+  REFRACT design flow — USE_PAD 1 (with IO PAD)   top=REFRACT_chip
+┌──────────────────────────────────────────────┬─────────────┬──────────────────────────────────────────┬──────────┐
+│ Stage (steps)                                │ Status      │ Key numbers                              │ Time     │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ PAD_planning (pad_wrapper, pad_delay_model)  │ PASS        │ pads 49, in 0.42/0.34, out 1.23/1.36 ns  │ 0:08     │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ RTL_coding (vcs_simulation)                  │ PASS        │                                          │ 0:29     │
+│ Synthesis (design_compiler_synthesis)        │ PASS        │ area 23532.2, setup +0.205 ns            │ 0:30     │
+│ Formality (function_checking)                │ PASS        │                                          │ 0:16     │
+│ STA_prelayout (primetime_3corner)            │ PASS        │ setup +0.205 / hold +0.057 ns            │ 0:17     │
+│ Gate_sim (vcs_sdf_simulation)                │ PASS        │ SDF $removal warn 619/619                │ 1:23     │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ NDM (icc2_library_build)                     │ PASS        │                                          │ 0:08     │
+│ APR (floorplan_place_cts_route)              │ PASS        │ die 1200 µm, core 520 µm                 │ 5:05     │
+│ APR_ECO (maxcap_transition_fix)              │ PASS        │ buffers +1                               │ 0:32     │
+│ Finish (filler_gds_netlist)                  │ PASS        │                                          │ 0:28 x4  │
+│ DRC_patch (m1_patch) *                       │ PASS        │ M1 patched 49 / 49                       │ 0:15     │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ DRC (icv_drc)                                │ PASS        │ CLEAN                                    │ 6:54 x4  │
+│ LVS (icv_lvs_transistor)                     │ PASS        │ PASS                                     │ 0:41 x3  │
+│ PEX (starrc_extraction)                      │ PASS        │ SPEF x3 corners                          │ 4:11 x3  │
+│ STA_postroute (primetime_spef)               │ PASS        │ setup +37.179 / hold +0.000 ns           │ 0:20 x3  │
+│ Signoff_ECO (sizing_buffering) *             │ PASS        │ cells changed 2                          │ 0:29 x2  │
+│ Formality_post (routed_vs_rtl)               │ PASS        │                                          │ 0:20     │
+│ Gate_post (vcs_postroute_sdf)                │ PASS        │ SDF $removal warn 619/619                │ 1:26     │
+└──────────────────────────────────────────────┴─────────────┴──────────────────────────────────────────┴──────────┘
+  ALL_STAGES_PASS  全部階段通過。
+  * = 修正回圈（上一步發現問題才會跑）   xN = 這一輪跑了 N 次

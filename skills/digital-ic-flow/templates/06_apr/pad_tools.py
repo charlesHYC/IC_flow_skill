@@ -197,6 +197,18 @@ def arcs(lib, cell, out_pin, tran, load):
 
 
 def padmodel(io_lib, in_pad, out_pad, dst, in_tran, in_load, out_tran, out_load):
+    # APR 把左右邊的 _NS PAD 換成同功能的 _EW 版本，繞線後的 netlist 兩種都會出現，
+    # 所以兩種都要產生 model（延遲各自從 library 查）
+    names = [(in_pad, out_pad)]
+    if in_pad.endswith("_NS") and out_pad.endswith("_NS"):
+        names.append((in_pad[:-3] + "_EW", out_pad[:-3] + "_EW"))
+    text = ""
+    for i, (ip, op) in enumerate(names):
+        text += padmodel_text(io_lib, ip, op, in_tran, in_load, out_tran, out_load, header=(i == 0))
+    Path(dst).write_text(text)
+
+
+def padmodel_text(io_lib, in_pad, out_pad, in_tran, in_load, out_tran, out_load, header=True):
     lib = Path(io_lib).read_text(errors="replace")
     ia = arcs(lib, in_pad, "DOUT", float(in_tran), float(in_load))
     oa = arcs(lib, out_pad, "PADIO", float(out_tran), float(out_load))
@@ -249,10 +261,12 @@ endmodule
 """ % dict(lib=io_lib, in_pad=in_pad, out_pad=out_pad, pg=pg, it=in_tran, il=in_load, ot=out_tran,
            ol=out_load, d_in=d(ia, ("PADIO", "combinational")), d_ren=d(ia, ("R_EN", "combinational")),
            d_out=d(oa, ("DIN", "combinational")), d_en=d(oa, ("EN", "three_state_enable")))
-    Path(dst).write_text(text)
+    if not header:  # 第二組只要 module 本體
+        text = text[text.index("`celldefine"):]
     print("PAD_DELAY %s PADIO->DOUT rise/fall = %.3f/%.3f ns" % ((in_pad,) + ia[("PADIO", "combinational")]))
     print("PAD_DELAY %s DIN->PADIO rise/fall = %.3f/%.3f ns (load %s fF)"
           % ((out_pad,) + oa[("DIN", "combinational")] + (out_load,)))
+    return text
 
 
 def simnet(src, top, dst):

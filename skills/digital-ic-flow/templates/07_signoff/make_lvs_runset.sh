@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # make_lvs_runset.sh — 由 PDK 的 SAED32 LVS runset 產生專案用副本（原 PDK 不修改）
 #   bash make_lvs_runset.sh <TOP> <GDS 路徑> <輸出 .rs>
-# 修改內容（來自 REFRACT saed32_lvs_local.rs，LVS PASS）：
+# 修改內容（實測 LVS PASS）：
 #   1. library_name / cell 改成本設計的 GDS 與 top cell（原檔是 CELLNAME.gds / resistor 範例）
 #   2. schematic_file 改成 icv_nettran 產生的 schematic.sp（原檔指向作者機器路徑）
 #   3. xref_db_h 宣告型別改為 xref_database_handle（新版 ICV 不接受舊型別名）

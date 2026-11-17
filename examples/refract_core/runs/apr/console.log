@@ -1,0 +1,59 @@
+DRC checking and fixing for standard cell rail strategy rail_s.
+PG_FIX VDD: 5 floating rails, adding stacked vias
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO Route finished with 0 open nets, of which 0 are frozen
+ECO Route finished with 2 violations
+DRC-SUMMARY:
+ROUTE_FIX iter 1 DRCs=2 open=0 nets={n2574 mult_18/n1243}
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO Route finished with 0 open nets, of which 0 are frozen
+ECO Route finished with 1 violations
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+ROUTE_FIX iter 2 DRCs=1 open=0 nets={mult_18/n1243}
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO Route finished with 0 open nets, of which 0 are frozen
+ECO Route finished with 0 violations
+DRC-SUMMARY:
+DRC-SUMMARY:
+ROUTE_FIX iter 3 DRCs=0 open=0 nets={}
+APR_ROUTED (constraint violations: 78; run apr_eco.tcl next)

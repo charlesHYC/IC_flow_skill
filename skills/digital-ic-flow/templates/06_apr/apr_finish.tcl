@@ -1,6 +1,5 @@
 ##############################################################################
 # apr_finish.tcl — 階段 6-終：filler、PG terminal、匯出 GDS / netlist / SPEF / DEF
-# 來源：REFRACT apr_finish_50ff.tcl（之後 ICV DRC CLEAN、LVS PASS）
 # 執行：cd runs/apr && icc2_shell -f ../../scripts/apr_finish.tcl
 ##############################################################################
 source [file join [file dirname [info script]] flow_config.tcl]
@@ -45,9 +44,19 @@ dict for {name c} $CORNERS {
 # GDS：一定要 merge 標準元件 GDS，否則只有 abstract，DRC/LVS 無法驗電晶體
 #      有 PAD 時 IO library 的 GDS 也要 merge
 set gds_in [list $CELL_GDS]
-if {$USE_PAD} {lappend gds_in $IO_GDS}
+if {$USE_PAD} {lappend gds_in $IO_GDS_FIXED}   ;# 修正版（fix_io_lib.py），不是 PDK 原檔
+# PAD 模式：PADIO 的 port 文字在 MRDL（ICC2 照 LEF），但 GDS 的打線金屬是 M9，LVS 只在 M9 上認得到。
+# 用專案自己的 layer map 副本多加一行 T 41 39（MRDL 上的文字 → M9PIN），PDK 原檔不動。
+set map_out $GDS_MAP
+if {$USE_PAD} {
+    set map_out [file normalize gdsout_pad.map]
+    set fi [open $GDS_MAP r]; set fo [open $map_out w]
+    puts -nonewline $fo [read $fi]; close $fi
+    puts $fo "T 41 39   ; MRDL text -> M9PIN (bond-pad metal in the IO GDS is M9)"
+    close $fo
+}
 write_gds -hierarchy design -long_names -output_pin all \
-    -layer_map $GDS_MAP -merge_files $gds_in -merge_gds_top_cell $TOP \
+    -layer_map $map_out -merge_files $gds_in -merge_gds_top_cell $TOP \
     $ROUTED_GDS
 write_def routed.def
 if {$USE_PAD} {

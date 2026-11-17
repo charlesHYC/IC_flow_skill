@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # run_gate_sim.sh — 階段 5：閘級模擬（netlist + SDF 延遲）
-# 來源：geofence scripts/run_gate.sh（CBDK）與 scripts/saed32/gate.py（SAED32 三 corner）
 # 比賽 A 級要求：所有 pattern 在 gate-level + SDF 下結果正確。
 # 兩種模式：
 #   （預設）       合成 netlist + 佈局前 SDF（階段 5）
@@ -13,13 +12,14 @@ PROJ=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 USE_PAD=${USE_PAD:-$(sed -n 's/^set USE_PAD \([01]\).*/\1/p' "$PROJ/scripts/flow_config.tcl")}
 
 # ---------- 依設計修改 ----------
-DESIGN=geofence
-TB=$PROJ/tb/tb.sv
-TOP=testfixture
-PATTERNS="$PROJ/patterns/univ.data"
-PASS_MARKER='ALL PASS'
+# tb、測資、PASS／FAIL 字串、SIM_CASES 與 run_rtl_sim.sh 相同
+TB=$PROJ/tb/tb.v                   # ← 你的 testbench
+TOP=testfixture                    # ← tb 的 top module 名稱
+PATTERNS="$PROJ/patterns"          # ← tb 讀的測資
+PASS_MARKER='ALL PASS'             # ← tb 成功時印出的字串
 FAIL_MARKER=''                     # tb 失敗字串（regex，例 'FAIL:'）；留空不檢查
 SIM_CASES=""                       # 同 run_rtl_sim.sh：例 "RI=2 ... RI=15"，每個 case 各跑一次（並行）
+DESIGN=$(sed -n 's/^set DESIGN *\([A-Za-z0-9_]*\).*/\1/p' "$PROJ/scripts/flow_config.tcl")   # top 名稱：從 flow_config.tcl 讀，不在這裡改
 TOP_V=$DESIGN; [ "$USE_PAD" = 1 ] && TOP_V=${DESIGN}_chip
 NETLIST=$PROJ/runs/synthesis/${TOP_V}_syn.v
 # CBDK：SDF 來自 DC；SAED32：用 PT 各 corner 寫出的 SDF
@@ -55,8 +55,8 @@ run_case() {   # $1 = case（"default" 或 define，例 RI=5）$2 = delay（max/
   grep -Eq 'Total errors:\s+0' compile.log run.log || { echo "SDF annotation errors"; return 1; }
   ! grep -Eiq 'timing violation|\$setuphold|\$recrem|\$width|Error-\[' run.log || return 1
   # SDF warning 逐一分類，只容許已知的兩種，其他一律失敗：
-  #   SDFCOM_CFTC $removal：SAED32 cell model 沒有 removal check（見 pitfalls，geofence 每次 17 個）
-  #   SDFCOM_IWSBA：跨階層的 INTERCONNECT（保留 DesignWare 階層時才有，例 REFRACT 的 sub_97_2），
+  #   SDFCOM_CFTC $removal：SAED32 cell model 沒有 removal check（見 pitfalls，每個帶非同步 reset 的 DFF 一個）
+  #   SDFCOM_IWSBA：跨階層的 INTERCONNECT（保留 DesignWare 階層時才有，例如 DesignWare 的減法器 sub_97_2），
   #                 VCS 明講「delay will still be annotated」，不是漏註入
   # PAD 的 IOPATH 必須註入成功（PAD model 有 specify），所以 PAD 上的 SDFCOM_IANE 也算失敗
   awk '/^Warning-\[SDFCOM/{w=$0; getline; getline m; getline d; print w "|" m "|" d}' compile.log > sdf_warnings.txt

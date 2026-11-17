@@ -1,7 +1,6 @@
 ##############################################################################
 # apr_eco.tcl — 階段 6-ECO：修 route_opt 後剩下的 max_capacitance / max_transition
-# 來源：geofence scripts/apr/capfix.tcl（9 個 cap buffer 修好繞線後負載），改成
-#       從報告自動抓違規 pin，不必手寫 pin 名稱。
+# 從報告自動抓違規 pin，不必手寫 pin 名稱。
 # 做法：在違規的 driver pin 後插 buffer → 增量 legalize → route_eco → 增量 detail route
 # 執行：cd runs/apr && icc2_shell -f ../../scripts/apr_eco.tcl
 ##############################################################################

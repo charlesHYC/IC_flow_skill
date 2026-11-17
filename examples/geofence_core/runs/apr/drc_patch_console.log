@@ -1,9 +1,0 @@
-M1.*
-DRC_PATCH: 4 M1 error boxes
-PATCH M1.W.2.1 u_geofence_core/vertex_y_q_regx3xx9x/CLK net=u_geofence_core/ZCTSNET_0 box={{54.297 140.136} {54.479 140.288}}
-PATCH M1.W.2.1 u_geofence_core/ctmTdsLR_1_1137/A1 net=u_geofence_core/n773_CDR1 box={{127.351 104.457} {127.519 104.627}}
-PATCH M1.W.2.1 u_geofence_core/sort_j_q_regx0x/SETB net=u_geofence_core/n651 box={{50.833 66.001} {51.063 66.178}}
-PATCH M1.W.2.1 u_geofence_core/edge_index_q_regx2x/CLK net=u_geofence_core/ctosc_gls_0 box={{67.825 63.224} {68.007 63.376}}
-DRC_PATCH: patched 4 / 4
-DRC_PATCH_PASS
-CPU usage for this session:      9 seconds (  0.00 hours)

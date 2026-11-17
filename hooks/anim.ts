@@ -39,7 +39,6 @@ export const ANIMS: Record<string, Anim> = {
   fm_post: { mode: 'build', caption: '繞線後的 netlist 還等於 RTL 嗎？', art: ["   RTL                 ROUTED NETLIST", " ┌──────────┐       ┌────┐ ┌────┐ ┌────┐ ┌────┐", " │ always @ │  ≡≡≡  │ &  │ │ ▷  │ │ FF │ │ ▷  │", " │ if/else  │       └────┘ └────┘ └────┘ └────┘", " └──────────┘", " compare points  ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓"] },
   gate_post: { mode: 'wave', caption: '繞線後 SDF 模擬：真正的線延遲…', art: WAVE },
   done: { mode: 'blink', caption: '全部跑完！', color: 'success', art: ["     ┃┃┃┃┃┃┃┃┃┃┃┃", "   ━┏━━━━━━━━━━━━┓━", "   ━┃   ✓ DONE   ┃━", "   ━┃ tape-out?  ┃━", "   ━┗━━━━━━━━━━━━┛━", "     ┃┃┃┃┃┃┃┃┃┃┃┃"] },
-  limited: { mode: 'blink', caption: '跑完了，但 DRC／LVS 只到 PAD_LIMITED（不是 PASS）', color: 'warning', art: ["     ┃┃┃┃┃┃┃┃┃┃┃┃", "   ━┏━━━━━━━━━━━━┓━", "   ━┃   ✓ DONE   ┃━", "   ━┃PAD_LIMITED ┃━", "   ━┗━━━━━━━━━━━━┛━", "     ┃┃┃┃┃┃┃┃┃┃┃┃"] },
   fail: { mode: 'blink', caption: '有階段失敗，先看那一列的 log', color: 'error', art: ["    ┏━━━━━━━━━━━━┓", "    ┃     ✗      ┃", "    ┃    FAIL    ┃", "    ┗━━━━━━━━━━━━┛"] },
 }
 

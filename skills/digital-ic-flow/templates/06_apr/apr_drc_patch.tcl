@@ -1,6 +1,6 @@
 ##############################################################################
 # apr_drc_patch.tcl — ICV DRC 回報 M1 細小突出（例如 M1.W.2.1）時的修補
-# 來源：REFRACT apr_m1_cap_50ff.tcl（手動列 cell 名稱）→ 改成讀 ICV 錯誤檔自動處理
+# 讀 ICV 錯誤檔自動找要補的位置，不必手列 cell 名稱
 # 原理：繞線在 cell pin 旁留下 <0.06 um 的 M1 細條；在同一 net 上畫一塊 M1 矩形，
 #       蓋住「pin 形狀 ∪ 錯誤區域」，細條就併成寬金屬。PDK 與規則都不改。
 # 執行：cd runs/apr && icc2_shell -f ../../scripts/apr_drc_patch.tcl

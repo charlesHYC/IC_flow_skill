@@ -21,11 +21,18 @@ cfg() { sed -n "s/^ *set $1 *\([A-Za-z0-9_]*\).*/\1/p" "$S/flow_config.tcl" | he
 # 終端機流程表格：bash scripts/run_stage.sh status（不執行任何工具）
 if [ "$stage" = status ]; then python3 "$S/flow_dashboard.py" "$PROJ" --text; exit 0; fi
 
+# 公版的範例值還沒換成自己的設計時先擋下來（標 ← 的設定要先填）
+if [ "$(cfg DESIGN)" = MY_TOP ]; then
+  echo "請先編輯 scripts/flow_config.tcl：DESIGN、RTL_FILES、CLK_PORT、PERIOD、I/O delay（標 ← 的值），" >&2
+  echo "再檢查各階段腳本檔頭「依設計修改」區塊（tb、測資、PASS 字串、die 大小…）" >&2
+  exit 2
+fi
+
 out="$PROJ/runs/$stage${corner:+_$corner}"
 mkdir -p "$out/reports"
 cd "$out"
 
-# 流程表格／/ic_flow 面板用：每個階段寫 status.txt（RUNNING → PASS／FAIL／PAD_LIMITED／SKIP），
+# 流程表格／/ic_flow 面板用：每個階段寫 status.txt（RUNNING → PASS／FAIL／SKIP），
 # 並在 runs/stage_history.log 記一筆；結束後把專案登記到 /ic_flow 的歷史
 t0=$(date +%s); SKIPPED=0; KILLED=0
 echo "RUNNING $t0" > "$out/status.txt"
@@ -36,7 +43,6 @@ record() {
   elif [ "$SKIPPED" = 1 ]; then res=SKIP
   elif [ $rc = 0 ]; then
     res=PASS
-    grep -qs '^[A-Z]*_PAD_LIMITED' "$out/console.log" && res=PAD_LIMITED
   fi
   echo "$res $t0 $(( $(date +%s) - t0 ))" > "$out/status.txt"
   echo "$stage $res $t0 $(( $(date +%s) - t0 ))" >> "$PROJ/runs/stage_history.log"
@@ -72,10 +78,12 @@ source $S/flow_config.tcl
 puts "DESIGN=\$DESIGN IN_PAD=\$IN_PAD OUT_PAD=\$OUT_PAD RTL_FILES='\$RTL_FILES'"
 puts "IO_LIB=\$IO_DB_DIR/[dict get \$CORNERS \$PAD_SIM_CORNER io].lib PAD_MODEL=\$PAD_MODEL"
 puts "PAD_ARGS='\$PAD_IN_TRAN \$PAD_IN_LOAD \$PAD_OUT_TRAN \$PAD_OUT_LOAD'"
+puts "IO_GDS=\$IO_GDS IO_CDL=\$IO_CDL ICV_DRC_RS=\$ICV_DRC_RS IO_LEF=\$IO_LEF IO_FIX_DIR=\$IO_FIX_DIR"
 EOF
 )"
              { python3 "$S/pad_tools.py" wrapper "$DESIGN" "$out" "$IN_PAD" "$OUT_PAD" $RTL_FILES &&
                python3 "$S/pad_tools.py" padmodel "$IO_LIB" "$IN_PAD" "$OUT_PAD" "$PAD_MODEL" $PAD_ARGS &&
+               python3 "$S/fix_io_lib.py" "$IO_GDS" "$IO_CDL" "$ICV_DRC_RS" "$IO_LEF" "$IO_FIX_DIR" &&
                echo PAD_PASS; } 2>&1 | tee console.log || true; marker=PAD_PASS ;;
   ndm)       icc2_lm_shell -f "$S/build_ndm.tcl" > console.log 2>&1 || true; marker=NDM_PASS ;;
   apr)       icc2_shell -f "$S/apr_core.tcl" > console.log 2>&1 || true; marker=APR_ROUTED ;;
@@ -86,9 +94,8 @@ EOF
   signoff_eco) cd "$PROJ/runs/apr"; icc2_shell -f "$S/apr_signoff_eco.tcl" > signoff_eco_console.log 2>&1 || true
              grep -q "^SIGNOFF_ECO_PASS" signoff_eco_console.log || { echo "SIGNOFF ECO FAIL"; exit 1; }; echo "signoff_eco PASS"; exit 0 ;;
   finish)    icc2_shell -f "$S/apr_finish.tcl" > console.log 2>&1 || true; marker=FINISH_PASS ;;
-  # USE_PAD=1：DRC／LVS 只剩 IO library 的問題時記為 PAD_LIMITED（不是 PASS，但流程繼續）
-  drc)       krb_fix; run_sh "$S/run_icv_drc.sh";                marker='DRC_PASS\|DRC_PAD_LIMITED' ;;
-  lvs)       krb_fix; run_sh "$S/run_icv_lvs.sh";                marker='LVS_PASS\|LVS_PAD_LIMITED' ;;
+  drc)       krb_fix; run_sh "$S/run_icv_drc.sh";                marker='DRC_PASS' ;;
+  lvs)       krb_fix; run_sh "$S/run_icv_lvs.sh";                marker='LVS_PASS' ;;
   starrc)    run_sh "$S/run_starrc.sh";                          marker='STARRC_PASS' ;;
   pt_post)   bad=0   # 全部 corner 跑完，signoff_eco 才看得到所有違規
              for c in ${corner:-slow typical fast}; do
@@ -102,5 +109,4 @@ esac
 [ -f console.log ] && grep -E '^Error' console.log && { echo "tool reported errors"; exit 1; }
 # 標記要在行首：工具會把執行過的 tcl 指令印回 log（例如 `puts "DC_PASS"`），只找子字串會誤判
 grep -rq "^\($marker\)" . || { echo "FAIL: marker '$marker' not found in $out"; exit 1; }
-if [ -f console.log ] && grep -q '^[A-Z]*_PAD_LIMITED' console.log; then echo "$stage PAD_LIMITED"; exit 0; fi
 echo "$stage PASS"

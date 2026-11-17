@@ -29,12 +29,11 @@ const NAME2ID: Record<string, string> = {
   DRC_patch: 'drc_patch', DRC: 'drc', LVS: 'lvs', PEX: 'starrc', STA_postroute: 'pt_post',
   Signoff_ECO: 'signoff_eco', Formality_post: 'fm_post', Gate_post: 'gate_post',
 }
-// 要播哪一段：正在跑的階段 > 全部完成／PAD_LIMITED／失敗；還沒跑完又沒在跑就不播
+// 要播哪一段：正在跑的階段 > 全部完成／失敗；還沒跑完又沒在跑就不播
 function animStage(d: FlowData): string | null {
   const run = d.rows.find(r => r.status === 'RUNNING')
   if (run) return run.id ?? NAME2ID[run.name.split(' ')[0]] ?? null
   if (d.overall === 'PASS') return 'done'
-  if (d.overall === 'PAD_LIMITED') return 'limited'
   if (d.overall === 'FAIL') return 'fail'
   return null
 }
@@ -60,10 +59,10 @@ function busyBar(f: number, w: number): string {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  PASS: 'success', FAIL: 'error', PAD_LIMITED: 'warning', RUNNING: 'suggestion',
+  PASS: 'success', FAIL: 'error', RUNNING: 'suggestion',
 }
 const STATUS_TEXT: Record<string, string> = {
-  PASS: 'PASS', FAIL: 'FAIL', PAD_LIMITED: 'PAD_LIMITED', RUNNING: 'RUNNING',
+  PASS: 'PASS', FAIL: 'FAIL', RUNNING: 'RUNNING',
   SKIP: 'skip', NOTRUN: '-', NOTNEEDED: 'not needed',
 }
 

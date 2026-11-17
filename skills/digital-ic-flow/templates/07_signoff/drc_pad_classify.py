@@ -3,13 +3,11 @@
 
   python3 drc_pad_classify.py <TOP>.LAYOUT_ERRORS <runs/apr/pad_geometry.txt>
 
-把每個錯誤框分成三類：
-  stitch：碰到電源 PAD 端的 M5 接線補丁（apr_pad_ring.tcl 記在 STITCH 行）。補丁畫在
-          LEF 宣告的 PG pin 位置，但 IO GDS 在那裡附近有 LEF 沒寫到的金屬 → spacing 錯誤，
-          是 LEF/GDS 不一致的直接後果（geofence 實測 M5.S.3.3 ×4）
-  io    ：落在外圈 PAD 帶（距 die 邊 < PAD_DEPTH）的其他錯誤 → IO library 自己的 GDS 問題
-  core  ：其他全部（核心、core ring、PAD 與核心之間的繞線）→ 要修
-有任何 core 錯誤就 exit 1；只有 stitch/io 時印 DRC_PAD_LIMITED。結果寫到 drc_classified.rpt。
+DRC 沒有 CLEAN 時，把每個錯誤框依位置分成三類（只印診斷，不決定 PASS／FAIL）：
+  stitch：碰到 pad_geometry.txt 裡 STITCH 行記錄的接線框
+  io    ：落在外圈 PAD 帶（距 die 邊 < PAD_DEPTH）→ 去看 IO cell（fix_io_lib.py）
+  core  ：其他全部（核心、core ring、PAD 與核心之間的繞線）
+有 core 錯誤時 exit 1；只有 stitch/io 時印 DRC_DIAG。結果寫到 drc_classified.rpt。
 """
 import re, sys, collections
 
@@ -62,4 +60,4 @@ print("DRC_CLASSIFY io_ring=%d (%s) stitch=%d (%s) core=%d (%s)" % (
     sum(core.values()), " ".join(sorted(core))))
 if core:
     print("DRC FAIL: errors inside core / PAD-to-core area, see drc_classified.rpt"); sys.exit(1)
-print("DRC_PAD_LIMITED: core clean; remaining errors are IO library GDS + PAD-side PG stitch (LEF/GDS mismatch)")
+print("DRC_DIAG: core clean; remaining errors are inside the IO ring or on the PAD-to-core PG stitch")

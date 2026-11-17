@@ -9,7 +9,7 @@ run_stage.sh 每個階段結束都會呼叫（順便把專案登記到 ~/.claude
 run_all.sh 結束時（含中途 STOP）印出表格；`run_stage.sh status` 隨時叫出表格。
 
 資料來源（全部是流程本身寫出的檔案，這裡不自己判定通過與否）：
-  runs/<stage>/status.txt      run_stage.sh 寫的結果：PASS / FAIL / PAD_LIMITED / SKIP / RUNNING
+  runs/<stage>/status.txt      run_stage.sh 寫的結果：PASS / FAIL / SKIP / RUNNING
   runs/stage_history.log       這一輪每次執行的紀錄（修正回圈會讓同一階段跑好幾次）
   各階段 console log 與報告     slack、面積、DRC/LVS 分類、ECO 動作等數字
 沒有 status.txt 的舊專案，改用 log 裡的成功標記推斷（與 run_stage.sh 的判定相同）。
@@ -82,8 +82,8 @@ PHASES = [
         ("drc_patch", "7a′", "M1 細條補丁", "IC Compiler II", "ICV 的 M1 錯誤全部補上", "apr/drc_patch_console.log", "DRC_PATCH_PASS", "fix"),
     ]),
     ("Signoff", [
-        ("drc", "7a", "DRC", "IC Validator", "RESULTS: CLEAN（PAD 模式：核心區 0 錯誤）", "drc/console.log", "DRC_PASS|DRC_PAD_LIMITED", "main"),
-        ("lvs", "7b", "LVS（電晶體層級）", "IC Validator", "Final comparison PASS（PAD 模式：MOS／電阻全對上）", "lvs/console.log", "LVS_PASS|LVS_PAD_LIMITED", "main"),
+        ("drc", "7a", "DRC", "IC Validator", "RESULTS: CLEAN", "drc/console.log", "DRC_PASS", "main"),
+        ("lvs", "7b", "LVS（電晶體層級）", "IC Validator", "Final comparison PASS", "lvs/console.log", "LVS_PASS", "main"),
         ("starrc", "8", "寄生萃取", "StarRC ×3 corner", "每個 corner SPEF 產生", "starrc/console.log", "STARRC_PASS", "main"),
         ("pt_post", "9a", "繞線後 STA", "PrimeTime ×3 corner", "實際 RC 下 setup／hold ≥ 0、無違規", "pt_post/console_slow.log", "POSTROUTE_STA_PASS", "main"),
         ("signoff_eco", "9a′", "Signoff ECO", "IC Compiler II", "修掉 StarRC＋PT 看到的違規", "apr/signoff_eco_console.log", "SIGNOFF_ECO_PASS", "fix"),
@@ -106,7 +106,7 @@ OUTPUT = {
     "eco": "乾淨的 routed block",
     "finish": "routed_full.gds、routed.v、routed_pg.v",
     "drc": "DRC 結果（PAD 模式另有 drc_classified.rpt）",
-    "lvs": "LVS 結果（PAD 模式另有 lvs_classified.rpt）",
+    "lvs": "LVS 結果（PAD 模式 FAIL 時另有 lvs_classified.rpt）",
     "starrc": "{top}.spef ×3 corner",
     "pt_post": "{design}_postroute_<corner>.sdf",
     "fm_post": "routed netlist ≡ RTL 的證明",
@@ -193,7 +193,7 @@ def run_all_view():
         m = re.match(r"^=== (\w+) ", line)
         if m:
             cur = m.group(1); res[cur] = "RUNNING"; continue
-        m = re.match(r"^(\w+) (PASS|PAD_LIMITED|SKIP)$", line)
+        m = re.match(r"^(\w+) (PASS|SKIP)$", line)
         if m and m.group(1) == cur:
             res[cur] = m.group(2)
         elif cur in ("sta", "pt_post") and re.match(r"^(POST )?STA PASS$", line):
@@ -222,8 +222,6 @@ def status(sid, log, marker):
     text = read(RUNS / log)
     if not text:
         return "NOTRUN", None, None
-    if re.search(r"^[A-Z]*_PAD_LIMITED", text, re.M):
-        return "PAD_LIMITED", None, None
     if re.search(r"^(%s)" % marker, text, re.M):
         return "PASS", None, None
     return "FAIL", None, None
@@ -296,22 +294,22 @@ def metric(sid):
             out.append(("補丁（最後一次）", "%s / %s" % m[-1]))
     elif sid == "signoff_eco":
         t = read(RUNS / "apr/signoff_eco_console.log")
-        out.append(("最後一次動作", str(len(result_lines(t, "SIZE")) + len(result_lines(t, "BUFFER")))))
+        out.append(("最後一次動作", str(len(result_lines(t, "SIZE")) + len(result_lines(t, "BUFFER")) + len(result_lines(t, "HOLD_BUFFER")))))
     elif sid == "drc":
         t = read(RUNS / "drc/console.log")
         m = re.search(r"^DRC_CLASSIFY io_ring=(\d+).*stitch=(\d+).*core=(\d+)", t, re.M)
-        if m:
-            out += [("核心區", m.group(3)), ("IO ring", m.group(1)), ("PAD 接縫", m.group(2))]
-        elif re.search(r"^DRC_PASS", t, re.M):
+        if re.search(r"^DRC_PASS", t, re.M):
             out.append(("結果", "CLEAN"))
+        elif m:
+            out += [("核心區", m.group(3)), ("IO ring", m.group(1)), ("PAD 接縫", m.group(2))]
     elif sid == "lvs":
         t = read(RUNS / "lvs/lvs_classified.rpt")
         mos = sum(int(x) for x in re.findall(r"^[NP]MOS\[\w+\] matched=(\d+)", t, re.M))
         res = sum(int(x) for x in re.findall(r"^RES\[\w+\] matched=(\d+)", t, re.M))
-        if mos:
-            out += [("MOS 對上", "{:,}".format(mos)), ("電阻對上", str(res))]
-        elif re.search(r"^LVS_PASS", read(RUNS / "lvs/console.log"), re.M):
+        if re.search(r"^LVS_PASS", read(RUNS / "lvs/console.log"), re.M):
             out.append(("結果", "PASS"))
+        elif mos:
+            out += [("MOS 對上", "{:,}".format(mos)), ("電阻對上", str(res))]
     elif sid == "starrc":
         n = len(result_lines(read(RUNS / "starrc/console.log"), "SPEF"))
         if n:
@@ -377,9 +375,9 @@ def text_keys(sid):
 
 def text_table(headline, overall):
     color = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
-    C = {"PASS": "32", "FAIL": "31;1", "PAD_LIMITED": "33", "RUNNING": "30;46;1",
+    C = {"PASS": "32", "FAIL": "31;1", "RUNNING": "30;46;1",
          "SKIP": "2", "NOTRUN": "2", "NOTNEEDED": "2"}
-    TXT = {"PASS": "PASS", "FAIL": "FAIL", "PAD_LIMITED": "PAD_LIMITED", "RUNNING": "RUNNING",
+    TXT = {"PASS": "PASS", "FAIL": "FAIL", "RUNNING": "RUNNING",
            "SKIP": "skip", "NOTRUN": "-", "NOTNEEDED": "not needed"}
 
     def paint(st, s):
@@ -407,7 +405,7 @@ def text_table(headline, overall):
             cells = ["\033[1m%s\033[0m" % c if i != 1 else c for i, c in enumerate(cells)]
         out.append("│ " + " │ ".join(cells) + " │")
     out.append(line("└", "┴", "┘"))
-    out.append("  " + paint({"pass": "PASS", "fail": "FAIL", "pad_limited": "PAD_LIMITED", "running": "RUNNING"}.get(overall, "NOTRUN"), headline[0]) + "  " + headline[1])
+    out.append("  " + paint({"pass": "PASS", "fail": "FAIL", "running": "RUNNING"}.get(overall, "NOTRUN"), headline[0]) + "  " + headline[1])
     out.append("  * = 修正回圈（上一步發現問題才會跑）   xN = 這一輪跑了 N 次")
     print("\n".join(out))
 
@@ -462,13 +460,10 @@ def main():
         overall = "FAIL"
     elif "NOTRUN" in sts:
         overall = "INCOMPLETE"
-    elif "PAD_LIMITED" in sts:
-        overall = "PAD_LIMITED"
     first_fail = next((s for s, st in stages if st == "FAIL"), None)
     current = next((s for s, st in stages if st == "RUNNING"), None)
     headline = {
         "PASS": ("ALL_STAGES_PASS", "全部階段通過。"),
-        "PAD_LIMITED": ("ALL_STAGES_DONE_PAD_LIMITED", "全部跑完；DRC／LVS 只剩 IO library 的問題，這不等於 PASS。"),
         "FAIL": ("FAIL", "停在「%s %s」，先看這個階段的 log。" % (first_fail[1], first_fail[2]) if first_fail else "有階段失敗。"),
         "RUNNING": ("RUNNING", "正在執行「%s %s」。" % (current[1], current[2]) if current else "執行中。"),
         "INCOMPLETE": ("INCOMPLETE", "還有階段沒跑。"),

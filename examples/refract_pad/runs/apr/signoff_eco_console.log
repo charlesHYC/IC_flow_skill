@@ -1,0 +1,12 @@
+SIGNOFF_ECO: 2 max_cap/transition pins, 0 hold endpoints from 3 PT reports
+SIZE u_core/copt_h_inst_7733 NBUFFX4_RVT -> NBUFFX8_RVT
+BUFFER u_core/ZBUF_61_inst_7675/Y (DELLN1X2_RVT has no larger size)
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO Route finished with 0 open nets, of which 0 are frozen
+ECO Route finished with 0 violations
+DRC-SUMMARY:
+DRC-SUMMARY:
+SIGNOFF_ECO: changed 2 cells
+SIGNOFF_ECO_PASS

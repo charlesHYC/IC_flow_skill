@@ -1,0 +1,58 @@
+ECO round 1: 39 pins
+ECO buffer mult_18/U228/S -> NBUFFX4_RVT (load 15.33 fF)
+ECO buffer mult_18/U257/S -> NBUFFX4_RVT (load 15.11 fF)
+ECO buffer mult_18/U231/S -> NBUFFX4_RVT (load 14.98 fF)
+ECO buffer mult_18/U1880/CO -> NBUFFX4_RVT (load 14.94 fF)
+ECO buffer mult_18/U250/S -> NBUFFX4_RVT (load 14.49 fF)
+ECO buffer mult_18/U274/S -> NBUFFX4_RVT (load 13.97 fF)
+ECO buffer mult_18/U226/S -> NBUFFX4_RVT (load 13.55 fF)
+ECO buffer mult_18/U256/S -> NBUFFX4_RVT (load 13.40 fF)
+ECO buffer mult_18/U227/S -> NBUFFX4_RVT (load 12.38 fF)
+ECO buffer mult_18/U259/S -> NBUFFX4_RVT (load 12.36 fF)
+ECO buffer mult_18/U230/S -> NBUFFX4_RVT (load 12.30 fF)
+ECO buffer mult_18/U223/S -> NBUFFX4_RVT (load 12.18 fF)
+ECO buffer mult_18/U224/S -> NBUFFX4_RVT (load 12.13 fF)
+ECO buffer mult_18/U225/S -> NBUFFX4_RVT (load 11.17 fF)
+ECO buffer mult_18/U243/S -> NBUFFX4_RVT (load 19.12 fF)
+ECO buffer mult_18/U241/S -> NBUFFX4_RVT (load 11.05 fF)
+ECO buffer mult_18/U234/S -> NBUFFX4_RVT (load 10.66 fF)
+ECO buffer mult_18/U232/S -> NBUFFX4_RVT (load 10.53 fF)
+ECO buffer mult_18/U244/S -> NBUFFX4_RVT (load 10.52 fF)
+ECO buffer mult_18/U240/S -> NBUFFX4_RVT (load 10.51 fF)
+ECO buffer mult_18/U235/S -> NBUFFX4_RVT (load 10.37 fF)
+ECO buffer mult_18/U248/S -> NBUFFX4_RVT (load 10.29 fF)
+ECO buffer mult_18/U239/S -> NBUFFX4_RVT (load 10.04 fF)
+ECO buffer mult_18/U266/S -> NBUFFX4_RVT (load 17.94 fF)
+ECO buffer mult_18/U265/S -> NBUFFX4_RVT (load 17.92 fF)
+ECO buffer mult_18/U245/S -> NBUFFX4_RVT (load 9.79 fF)
+ECO buffer mult_18/U246/S -> NBUFFX4_RVT (load 9.63 fF)
+ECO buffer mult_18/U260/S -> NBUFFX4_RVT (load 17.50 fF)
+ECO buffer mult_18/U252/S -> NBUFFX4_RVT (load 9.45 fF)
+ECO buffer mult_18/U233/S -> NBUFFX4_RVT (load 9.20 fF)
+ECO buffer mult_18/U221/S -> NBUFFX4_RVT (load 9.17 fF)
+ECO buffer mult_18/U217/S -> NBUFFX4_RVT (load 9.07 fF)
+ECO buffer mult_18/U242/S -> NBUFFX4_RVT (load 8.68 fF)
+ECO buffer mult_18/U222/S -> NBUFFX4_RVT (load 8.61 fF)
+ECO buffer mult_18/U237/S -> NBUFFX4_RVT (load 8.52 fF)
+ECO buffer mult_18/ctmTdsLR_1_1425/Y -> NBUFFX4_RVT (load 8.12 fF)
+ECO buffer add_77/U1_36/S -> NBUFFX4_RVT (load 8.03 fF)
+ECO buffer mult_18/U251/S -> NBUFFX4_RVT (load 8.03 fF)
+ECO buffer ctmTdsLR_1_2601/Y -> NBUFFX4_RVT (load 8.02 fF)
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO Route finished with 0 open nets, of which 0 are frozen
+ECO Route finished with 0 violations
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO round 2: 1 pins
+ECO buffer mult_18/ctmTdsLR_1_1441/Y -> NBUFFX4_RVT (load 8.03 fF)
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO Route finished with 0 open nets, of which 0 are frozen
+ECO Route finished with 0 violations
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO inserted 40 buffers
+APR_PASS

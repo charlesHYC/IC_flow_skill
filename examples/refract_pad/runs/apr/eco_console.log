@@ -1,0 +1,11 @@
+ECO round 1: 1 pins
+ECO buffer u_core/mult_18/ZBUF_298_inst_1492/Y -> NBUFFX4_RVT (load 16.08 fF)
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO Route finished with 0 open nets, of which 0 are frozen
+ECO Route finished with 0 violations
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO inserted 1 buffers
+APR_PASS

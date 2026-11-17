@@ -1,7 +1,6 @@
 ##############################################################################
 # apr_core.tcl — 階段 6：ICC2 APR（USE_PAD=0 核心；USE_PAD=1 加 IO PAD ring 的全晶片）
 #   floorplan → power plan → place_opt → clock_opt(CTS) → route_auto/route_opt
-# 來源：REFRACT apr_50ff.tcl（已通過 DRC/LVS/PEX），階段切分與檢查沿用 geofence apr/*.tcl
 # 執行：cd runs/apr && icc2_shell -f ../../scripts/apr_core.tcl
 # 每個階段 save_block -as <name>，出錯可以從上一個 block 重跑。
 # USE_PAD=1：floorplan／PG／terminal 改由 apr_pad_ring.tcl 的 proc 處理，place 之後流程相同。
@@ -9,13 +8,20 @@
 source [file join [file dirname [info script]] flow_config.tcl]
 
 # ---------- 依設計修改 ----------
-set DIE        {{0 0} {240 240}}   ;# um，依面積與 utilization 調整（geofence 核心約 5800 um^2）
+set DIE        {{0 0} {240 240}}   ;# ← um。先看合成的 cell area：core 面積（die 扣掉兩邊 CORE_OFF）
+                                   #   約為 cell area 的 2～3 倍（utilization 30～50%）。例：cell area
+                                   #   5800 um^2 → 240 um 就很寬鬆；19800 um^2 → 240 um（core 200 um）約 50%
 set CORE_OFF   20                  ;# die 邊到 core 的距離，用來放 power ring
 set MIN_LAYER  M2
 set MAX_LAYER  M6                  ;# M7/M8 留給 power ring / mesh
 set PIN_SIDE_IN  1                 ;# 1=左 2=上 3=右 4=下
 set PIN_SIDE_OUT 3
 set CORE_UTIL  0.15                ;# USE_PAD=1 時用來估 core 邊長（PAD 少時 die 由 PAD 數決定）
+set APR_IO_MARGIN 1.0              ;# ns，CTS 後 I/O max delay 在 flow_config 的值上再加多少（setup 多留餘裕）；
+                                   #   min delay 不加，直接用 flow_config 的值（比 signoff 鬆會漏修 hold）
+set ROUTE_FIX_ITERS 4              ;# route_opt 後殘留 DRC 的修正回圈最多跑幾輪
+set ROUTE_FIX_SHIFT 2.0            ;# um，修正回圈把 cell 移離電源條的距離；約等於電源條寬度（下面 mesh 的 width）
+set CLK_ROOT_BUF NBUFFX8_RVT          ;# USE_PAD=1：clock PAD 後面插的那顆 buffer（CTS 的起點），見 CTS 一節
 # --------------------------------
 set SCRIPTS [file dirname [info script]]
 set SDC [expr {$USE_PAD ? "constraints_chip.sdc" : "constraints_saed32.sdc"}]
@@ -104,6 +110,7 @@ set_pg_strategy ring_s -core -pattern {{name: ring} {nets: {VDD VSS}} {offset: {
 compile_pg -strategies ring_s -via_rule pg_join
 # 有 PAD：把 VDD/VSS 電源 PAD 的 M5 電源環接到剛建好的 core ring
 if {$USE_PAD} {puts "PAD_PG_STITCH total [pad_ring_to_core]"}
+if {$USE_PAD} {pad_pg_terminals}
 create_pg_mesh_pattern mesh -layers {{{vertical_layer: M6} {width: 2} {spacing: interleaving} {pitch: 40} {offset: 10}} {{horizontal_layer: M7} {width: 2} {spacing: interleaving} {pitch: 40} {offset: 10}}}
 set_pg_strategy mesh_s -core -pattern {{name: mesh} {nets: {VDD VSS}}} -extension {{stop: outermost_ring}}
 compile_pg -strategies mesh_s -via_rule pg_join
@@ -112,11 +119,11 @@ set_pg_strategy rail_s -core -pattern {{name: rails} {nets: {VDD VSS}}} -extensi
 compile_pg -strategies rail_s -via_rule pg_join
 # M1 rail 與 M6/M7/M8 之間的 via 不會自動產生（只會有 ring-mesh 交點的 via），
 # 少了這一行：check_pg_connectivity 顯示 floating wires，LVS 的 VDD 斷成數十段。
-# 用 tech file 的方形 *_C via（REFRACT apr_repair_50ff.tcl，ICV DRC CLEAN）。
+# 用 tech file 的方形 *_C via（實測 ICV DRC CLEAN）。
 create_pg_vias -nets {VDD VSS} -from_layers M1 -to_layers M6 -via_masters {VIA12SQ_C VIA23SQ_C VIA34SQ_C VIA45SQ_C VIA56SQ_C}
 # （M6→M7、M7→M8 的 via 已由 compile_pg 的 via_rule 放好；再跑一次只會得到 PGR-050）
 # 位在同 net 的 M7 mesh 正下方的 rail，M1→M6 via 會落在 M6×M7 交點的 VIA67 正下方，
-# create_pg_vias 預設的 DRC 檢查會整條跳過 → rail 浮接（geofence smoke test：5 條 VDD rail）。
+# create_pg_vias 預設的 DRC 檢查會整條跳過 → rail 浮接（例：實測 5 條 VDD rail 浮接）。
 # 只對仍有浮接的 net 用 -drc no_check 補 via（堆疊 via 是否合法由 ICV DRC 決定）。
 foreach net {VDD VSS} {
     redirect -variable r {check_pg_connectivity -nets $net}
@@ -131,6 +138,12 @@ redirect pg_drc_fp.rpt {check_pg_drc -do_not_check_shapes_in_lib_cells}
 
 # 常數 1/0 改用 tie cell，不直接接 PG
 # （有 PAD 時，PAD 的 R_EN/EN=1'b1 也會接 tie cell）
+# SAED32 的 TIEH_RVT／TIEL_RVT 在 library 裡是 dont_use、dont_touch，不解除的話
+# add_tie_cells 一顆都插不進去（OPT-200: No tie cell is available），1'b1 會變成
+# *Logic1* net：std cell 旁邊有電源軌還能直接接上，PAD 的 R_EN/EN 離電源軌很遠，
+# layout 裡就變成一段沒接到 VDD 的線（ZRT-511；LVS 報 VDD open，125 個閘極）。
+set_attribute [get_lib_cells */TIE*_RVT] dont_use false
+set_attribute [get_lib_cells */TIE*_RVT] dont_touch false
 add_tie_cells -tie_high_lib_cells [get_lib_cells */TIEH_RVT] -tie_low_lib_cells [get_lib_cells */TIEL_RVT]
 foreach net $PG_NETS {connect_pg_net -net $net [get_pins -hierarchical */$net]}
 if {$USE_PAD} {
@@ -153,19 +166,32 @@ foreach_in_collection s [all_scenarios] {
     current_scenario $s
     set_dont_touch_network -clear [all_clocks]
     remove_ideal_network [get_ports $CLK_PORT]
-    # I/O delay 以 root clock 為參考，跟 PrimeTime 的語意一致。
-    # 每個值都只能比 signoff 的 SDC 嚴、不能比它鬆：input min 必須 <= SDC 的 -min（官方 0）。
-    # REFRACT 實測：這裡原本是 0.2，ICC2 以為 RST 晚 0.2 ns 才到，沒修 removal；
-    # 繞線後 PT 用 SDC 的 0 檢查，619 個 DFF removal 違規（fast -0.07 ns）。
+    # I/O delay 以 root clock 為參考（-network_latency_included），跟繞線後 PrimeTime 的語意一致。
+    # 數字來自 flow_config.tcl，和 SDC 同一組：max 可以加餘裕（更嚴），min 不能比 SDC 大（會更鬆）。
+    # 例：曾經在這裡另外寫 min 0.2、SDC 是 0，ICC2 以為 reset 晚 0.2 ns 才到而沒修 removal，
+    # 繞線後 PT 才報 619 個 DFF removal 違規（fast -0.07 ns）。
     set io [remove_from_collection [all_inputs] [get_ports [concat $CLK_PORT $PG_NETS]]]
     set oo [remove_from_collection [all_outputs] [get_ports $PG_NETS]]
-    set_input_delay  -max 2.0 -network_latency_included -clock $CLK_PORT $io
-    set_input_delay  -min 0.0 -network_latency_included -clock $CLK_PORT $io
-    set_output_delay -max 2.0 -network_latency_included -clock $CLK_PORT $oo
-    set_output_delay -min 0.2 -network_latency_included -clock $CLK_PORT $oo
+    set_input_delay  -max [expr {$IN_DELAY_MAX + $APR_IO_MARGIN}]  -network_latency_included -clock $CLK_PORT $io
+    set_input_delay  -min $IN_DELAY_MIN  -network_latency_included -clock $CLK_PORT $io
+    set_output_delay -max [expr {$OUT_DELAY_MAX + $APR_IO_MARGIN}] -network_latency_included -clock $CLK_PORT $oo
+    set_output_delay -min $OUT_DELAY_MIN -network_latency_included -clock $CLK_PORT $oo
     set_max_transition 0.25 -clock_path [all_clocks]
 }
 set_lib_cell_purpose -include cts [get_lib_cells {*/NBUFFX*_RVT */INVX*_RVT}]
+# USE_PAD=1：clock PAD 輸出的 net 直接接在 PAD 上，ICC2 視為 pad net，CTS 不會在上面插 buffer
+# （CTS-053 "will not be buffered because it is a pad net"），PAD 只好直接推所有 DFF。
+# DFF 少時推得動；多時 transition 爆掉（例：619 個 DFF，0.81 ns，上限 0.25 ns，clock tree 0 顆 buffer）。
+# 先在 PAD 後面插一顆 buffer（dont_touch），CTS 從這顆 buffer 的輸出（一般 net）開始建 tree
+# （例：插了之後 clock tree 從 0 顆變成 15 顆 repeater，clock transition 違規 0）。
+if {$USE_PAD} {
+    set clk_root [insert_buffer [get_pins pad_${CLK_PORT}/DOUT] [get_lib_cells */$CLK_ROOT_BUF] \
+        -new_cell_names clk_root_buf -new_net_names clk_root_net]
+    # clock_opt 一開始會移除 clock 線上原有的 buffer 再重建，不設 dont_touch 這顆會被拆掉
+    set_dont_touch [get_cells clk_root_buf*] true
+    legalize_placement -cells [get_cells clk_root_buf*]
+    puts "CTS_ROOT: inserted [get_object_name [get_cells clk_root_buf*]] after pad_${CLK_PORT}/DOUT"
+}
 clock_opt
 foreach net $PG_NETS {connect_pg_net -net $net [get_pins -hierarchical */$net]}
 redirect cts_qor.rpt   {report_qor}
@@ -175,10 +201,10 @@ save_block -as cts
 # ===== 7. Route =====
 route_auto
 route_opt
-# route_opt 的 ECO route 有迭代上限，可能留下少數 short／spacing（REFRACT 實測 3 個，
+# route_opt 的 ECO route 有迭代上限，可能留下少數 short／spacing（例：實測 3 個，
 # 訊號線在 M6 電源條下方的 via stack 旁短到 VSS，增量 route_detail 也清不掉）。
-# 修正回圈：第 1 輪拆掉有違規的 net 重繞；之後還在的，把相連的 cell 往右移 2 um
-# 離開電源條、legalize 後再重繞（DRC 與 open net 都要是 0）。最多 4 輪，結果仍由下面的 check_routes 判定。
+# 修正回圈：第 1 輪拆掉有違規的 net 重繞；之後還在的，把相連的 cell 移開 ROUTE_FIX_SHIFT
+# 離開電源條、legalize 後再重繞（DRC 與 open net 都要是 0）。最多 ROUTE_FIX_ITERS 輪，結果仍由下面的 check_routes 判定。
 proc route_drc_nets {} {
     redirect -variable r {check_routes}
     if {![regexp {Total number of DRCs = (\d+)} $r -> n]} {set n -1}
@@ -194,7 +220,7 @@ proc route_drc_nets {} {
     }
     return [list $n $o $nets]
 }
-for {set i 1} {$i <= 4} {incr i} {
+for {set i 1} {$i <= $ROUTE_FIX_ITERS} {incr i} {
     lassign [route_drc_nets] n o nets
     puts "ROUTE_FIX iter $i DRCs=$n open=$o nets={$nets}"
     if {$n == 0 && $o == 0} break
@@ -203,8 +229,17 @@ for {set i 1} {$i <= 4} {incr i} {
     if {$i >= 2} {
         set cells [filter_collection [get_cells -of [get_pins -of $nets]] "is_hard_macro==false && physical_status!=fixed"]
         foreach_in_collection c $cells {
-            lassign [lindex [get_attribute $c boundary_bbox] 0] x y
-            set_cell_location -coordinates [list [expr {$x + 2.0}] $y] $c
+            # 往遠離電源條的那一側移：cell 中心在電源條左邊就往左，否則往右
+            set bb [get_attribute $c boundary_bbox]
+            lassign [lindex $bb 0] x y
+            set cx [expr {([lindex $bb 0 0] + [lindex $bb 1 0]) / 2.0}]
+            set dir 1
+            set st [get_shapes -quiet -intersect $bb -filter "shape_use==stripe"]
+            if {[sizeof_collection $st] > 0} {
+                set sb [get_attribute [index_collection $st 0] bbox]
+                if {$cx < ([lindex $sb 0 0] + [lindex $sb 1 0]) / 2.0} {set dir -1}
+            }
+            set_cell_location -coordinates [list [expr {$x + $dir * $ROUTE_FIX_SHIFT}] $y] $c
         }
         legalize_placement -cells $cells
         set nets [add_to_collection -unique $nets [get_nets -of [get_pins -of $cells]]]
@@ -239,14 +274,8 @@ if {![regexp {Total number of DRCs = 0} $r] || ![regexp {Total number of open ne
     exit 1
 }
 # 電源網路不能有浮接的線、via 或 cell
-# USE_PAD=1：電源 PAD 打線 terminal 浮接是 SAED32 io_std 的已知限制（LEF 的 *PAD pin
-# 與 PAD 內部電源環不相連），只排除「terminals」這一項，其餘一樣要是 0。
+# USE_PAD=1 也一樣：電源 port 的 terminal 放在 core ring／PAD 電源條上（pad_pg_terminals），不能浮接
 set fp [open pg_connectivity.rpt r]; set pg [read $fp]; close $fp
-if {$USE_PAD} {
-    set nterm [regexp -all {Number of floating terminals:\s*[1-9]} $pg]
-    puts "PAD_LIMITED: $nterm PG net(s) with floating bond terminals (io_std LEF limitation)"
-    regsub -all {Number of floating terminals:\s*\d+} $pg {} pg
-}
 if {[regexp {Number of floating [a-zA-Z /]+:\s*[1-9]} $pg]} {
     puts "APR_FAIL: floating PG objects, see pg_connectivity.rpt"
     exit 1

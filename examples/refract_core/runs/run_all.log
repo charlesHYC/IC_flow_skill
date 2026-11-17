@@ -1,0 +1,233 @@
+=== pad 20:19:03
+pad: USE_PAD=0, nothing to do
+pad SKIP
+=== rtl_sim 20:19:03
+rtl RI=15 PASS
+ALL PASS
+rtl_sim PASS
+=== synthesis 20:19:19
+synthesis PASS
+=== formality 20:19:44
+formality PASS
+=== sta 20:19:59
+STA PASS
+=== gate_sim 20:20:15
+SDF_NOTE fast: removal-check warnings=619 
+GATE_SIM_PASS
+gate_sim PASS
+=== ndm 20:21:04
+ndm PASS
+=== apr 20:21:10
+apr PASS
+=== eco 20:25:19
+eco PASS
+=== finish 20:25:53
+finish PASS
+=== drc 20:26:14
+NOT EXECUTED rules: 1
+DRC FAIL: see <proj>/runs/drc/REFRACT.RESULTS / REFRACT.LAYOUT_ERRORS
+FAIL: marker 'DRC_PASS' not found in <proj>/runs/drc
+=== drc_patch 20:26:33
+drc_patch PASS
+=== finish 20:26:47
+finish PASS
+=== drc 20:27:07
+NOT EXECUTED rules: 1
+DRC_PASS
+drc PASS
+=== lvs 20:27:26
+wrote lvs_local.rs
+LVS_PASS
+lvs PASS
+=== starrc 20:27:48
+SPEF fast OK
+STARRC_PASS
+starrc PASS
+=== pt_post 20:31:40
+POST STA FAIL slow
+POST STA FAIL typical
+POST STA FAIL fast
+=== signoff_eco 20:32:00
+signoff_eco PASS
+=== finish 20:32:25
+finish PASS
+=== drc 20:32:46
+NOT EXECUTED rules: 1
+DRC_PASS
+drc PASS
+=== lvs 20:33:06
+wrote lvs_local.rs
+LVS_PASS
+lvs PASS
+=== starrc 20:33:27
+SPEF fast OK
+STARRC_PASS
+starrc PASS
+=== pt_post 20:37:20
+POST STA FAIL slow
+=== signoff_eco 20:37:40
+signoff_eco PASS
+=== finish 20:38:04
+finish PASS
+=== drc 20:38:25
+NOT EXECUTED rules: 1
+DRC_PASS
+drc PASS
+=== lvs 20:38:44
+wrote lvs_local.rs
+LVS_PASS
+lvs PASS
+=== starrc 20:39:06
+SPEF fast OK
+STARRC_PASS
+starrc PASS
+=== pt_post 20:42:59
+POST STA FAIL slow
+POST STA FAIL typical
+POST STA FAIL fast
+=== signoff_eco 20:43:19
+signoff_eco PASS
+=== finish 20:43:39
+finish PASS
+=== drc 20:44:00
+NOT EXECUTED rules: 1
+DRC_PASS
+drc PASS
+=== lvs 20:44:19
+wrote lvs_local.rs
+LVS_PASS
+lvs PASS
+=== starrc 20:44:41
+SPEF fast OK
+STARRC_PASS
+starrc PASS
+=== pt_post 20:48:34
+POST STA PASS
+SIGNOFF CLOSED after 3 signoff_eco loop(s)
+=== fm_post 20:48:54
+fm_post PASS
+=== gate_post 20:49:09
+SDF_NOTE fast: removal-check warnings=619 
+GATE_SIM_PASS
+gate_post PASS
+ALL_STAGES_PASS
+DC_SLACK setup=3.73516 cell_area=19978.006041
+STA_SLACK fast setup=3.735130 hold=0.076167
+STA_SLACK slow setup=36.126137 hold=0.196716
+STA_SLACK typical setup=38.133072 hold=0.133988
+POSTROUTE_SLACK fast setup=45.673645 hold=0.006032
+POSTROUTE_SLACK slow setup=36.058857 hold=0.242385
+POSTROUTE_SLACK typical setup=42.048111 hold=0.092875
+            # 已經是 ECO buffer 還推不動 → 直接換大顆，不要再串一級
+ECO buffer mult_18/U228/S -> NBUFFX4_RVT (load 15.33 fF)
+ECO buffer mult_18/U257/S -> NBUFFX4_RVT (load 15.11 fF)
+ECO buffer mult_18/U231/S -> NBUFFX4_RVT (load 14.98 fF)
+ECO buffer mult_18/U1880/CO -> NBUFFX4_RVT (load 14.94 fF)
+ECO buffer mult_18/U250/S -> NBUFFX4_RVT (load 14.49 fF)
+ECO buffer mult_18/U274/S -> NBUFFX4_RVT (load 13.97 fF)
+ECO buffer mult_18/U226/S -> NBUFFX4_RVT (load 13.55 fF)
+ECO buffer mult_18/U256/S -> NBUFFX4_RVT (load 13.40 fF)
+ECO buffer mult_18/U227/S -> NBUFFX4_RVT (load 12.38 fF)
+ECO buffer mult_18/U259/S -> NBUFFX4_RVT (load 12.36 fF)
+ECO buffer mult_18/U230/S -> NBUFFX4_RVT (load 12.30 fF)
+ECO buffer mult_18/U223/S -> NBUFFX4_RVT (load 12.18 fF)
+ECO buffer mult_18/U224/S -> NBUFFX4_RVT (load 12.13 fF)
+ECO buffer mult_18/U225/S -> NBUFFX4_RVT (load 11.17 fF)
+ECO buffer mult_18/U243/S -> NBUFFX4_RVT (load 19.12 fF)
+ECO buffer mult_18/U241/S -> NBUFFX4_RVT (load 11.05 fF)
+ECO buffer mult_18/U234/S -> NBUFFX4_RVT (load 10.66 fF)
+ECO buffer mult_18/U232/S -> NBUFFX4_RVT (load 10.53 fF)
+ECO buffer mult_18/U244/S -> NBUFFX4_RVT (load 10.52 fF)
+ECO buffer mult_18/U240/S -> NBUFFX4_RVT (load 10.51 fF)
+ECO buffer mult_18/U235/S -> NBUFFX4_RVT (load 10.37 fF)
+ECO buffer mult_18/U248/S -> NBUFFX4_RVT (load 10.29 fF)
+ECO buffer mult_18/U239/S -> NBUFFX4_RVT (load 10.04 fF)
+ECO buffer mult_18/U266/S -> NBUFFX4_RVT (load 17.94 fF)
+ECO buffer mult_18/U265/S -> NBUFFX4_RVT (load 17.92 fF)
+ECO buffer mult_18/U245/S -> NBUFFX4_RVT (load 9.79 fF)
+ECO buffer mult_18/U246/S -> NBUFFX4_RVT (load 9.63 fF)
+ECO buffer mult_18/U260/S -> NBUFFX4_RVT (load 17.50 fF)
+ECO buffer mult_18/U252/S -> NBUFFX4_RVT (load 9.45 fF)
+ECO buffer mult_18/U233/S -> NBUFFX4_RVT (load 9.20 fF)
+ECO buffer mult_18/U221/S -> NBUFFX4_RVT (load 9.17 fF)
+ECO buffer mult_18/U217/S -> NBUFFX4_RVT (load 9.07 fF)
+ECO buffer mult_18/U242/S -> NBUFFX4_RVT (load 8.68 fF)
+ECO buffer mult_18/U222/S -> NBUFFX4_RVT (load 8.61 fF)
+ECO buffer mult_18/U237/S -> NBUFFX4_RVT (load 8.52 fF)
+ECO buffer mult_18/ctmTdsLR_1_1425/Y -> NBUFFX4_RVT (load 8.12 fF)
+ECO buffer add_77/U1_36/S -> NBUFFX4_RVT (load 8.03 fF)
+ECO buffer mult_18/U251/S -> NBUFFX4_RVT (load 8.03 fF)
+ECO buffer ctmTdsLR_1_2601/Y -> NBUFFX4_RVT (load 8.02 fF)
+ECO buffer mult_18/ctmTdsLR_1_1441/Y -> NBUFFX4_RVT (load 8.03 fF)
+ECO inserted 40 buffers
+DRC_PATCH: 38 M1 error boxes
+PATCH M1.W.2.1 mult_18/ctmTdsLR_2_1467/A1 net=mult_18/n3308 box={{157.657 179.485} {157.825 179.655}}
+PATCH M1.W.2.1 mult_18/ctmTdsLR_2_1484/A1 net=mult_18/n3382 box={{159.177 166.109} {159.345 166.279}}
+PATCH M1.W.2.1 mult_18/ctmTdsLR_2_1464/A1 net=mult_18/n3016 box={{108.409 137.897} {108.577 138.067}}
+PATCH M1.W.2.1 mult_18/ctmTdsLR_2_1481/A1 net=mult_18/n3089 box={{121.177 146.045} {121.345 146.215}}
+PATCH M1.W.2.1 mult_18/ctmTdsLR_2_1427/A1 net=mult_18/n3162 box={{142.457 141.241} {142.625 141.411}}
+PATCH M1.W.2.1 mult_18/ctmTdsLR_2_1454/A1 net=mult_18/n3528 box={{157.201 144.585} {157.369 144.755}}
+PATCH M1.W.2.1 mult_18/ctmTdsLR_2_1433/A1 net=mult_18/n3455 box={{162.369 154.617} {162.537 154.787}}
+PATCH M1.W.2.1 U1091/A1 net=N147 box={{197.271 132.669} {197.439 132.839}}
+PATCH M1.W.2.1 ctmTdsLR_4_735/A1 net=n39 box={{60.529 115.949} {60.697 116.119}}
+PATCH M1.W.2.1 ctmTdsLR_1_1440/A1 net=root_bit[8] box={{73.905 115.949} {74.073 116.119}}
+PATCH M1.W.2.1 mult_18/ctmTdsLR_2_1451/A1 net=mult_18/n2942 box={{97.465 129.325} {97.633 129.495}}
+PATCH M1.W.2.1 mult_18/U2449/A1 net=mult_18/a[0] box={{104.551 129.325} {104.719 129.495}}
+PATCH M1.W.2.1 U1092/A1 net=n67 box={{193.623 131.209} {193.791 131.379}}
+PATCH M1.W.2.1 U1114/A1 net=n2366 box={{194.535 117.833} {194.703 118.003}}
+PATCH M1.W.2.1 U1087/A1 net=N145 box={{195.049 131.209} {195.217 131.379}}
+PATCH M1.W.2.1 U1119/A1 net=n73 box={{196.511 119.293} {196.679 119.463}}
+PATCH M1.W.2.1 U1104/A1 net=ZBUF_136_5 box={{198.031 114.489} {198.199 114.659}}
+PATCH M1.W.2.1 U1077/A1 net=N147 box={{198.335 131.209} {198.503 131.379}}
+PATCH M1.W.2.1 U1118/A1 net=ZBUF_136_5 box={{199.095 121.177} {199.263 121.347}}
+PATCH M1.W.2.1 point_index_regx2x/CLK net=ZCTSNET_1 box={{199.609 120.072} {199.791 120.224}}
+PATCH M1.W.2.1 root_regx26x/CLK net=ZCTSNET_10 box={{73.145 90.32} {73.327 90.472}}
+PATCH M1.W.2.1 displacement_regx23x/CLK net=ZCTSNET_8 box={{114.489 93.32} {114.671 93.472}}
+PATCH M1.W.2.1 radicand_regx50x/CLK net=ZCTSNET_8 box={{124.521 86.632} {124.703 86.784}}
+PATCH M1.W.2.1 U798/A1 net=n61 box={{129.175 92.541} {129.343 92.711}}
+PATCH M1.W.2.1 U809/A1 net=state[0] box={{129.537 91.081} {129.705 91.251}}
+PATCH M1.W.2.1 U1137/A1 net=state[1] box={{130.999 97.769} {131.167 97.939}}
+PATCH M1.W.2.1 U1069/A1 net=state[1] box={{131.151 101.113} {131.319 101.283}}
+PATCH M1.W.2.1 U2638/A1 net=n59 box={{131.303 94.425} {131.471 94.595}}
+PATCH M1.W.2.1 U1139/A1 net=n59 box={{132.671 102.573} {132.839 102.743}}
+PATCH M1.W.2.1 U2640/A1 net=n61 box={{133.127 97.769} {133.295 97.939}}
+PATCH M1.W.2.1 U2635/A1 net=n377 box={{134.097 101.113} {134.265 101.283}}
+PATCH M1.W.2.1 U1074/A1 net=state[0] box={{135.769 101.113} {135.937 101.283}}
+PATCH M1.W.2.1 ctmTdsLR_1_1446/A1 net=n60 box={{135.863 102.573} {136.031 102.743}}
+PATCH M1.W.2.1 numerator_regx46x/CLK net=ZCTSNET_14 box={{85.457 56.536} {85.639 56.688}}
+PATCH M1.W.2.1 square_x_regx24x/CLK net=ZCTSNET_8 box={{114.793 73.256} {114.975 73.408}}
+PATCH M1.W.2.1 square_x_regx42x/CLK net=ZCTSNET_6 box={{165.409 66.568} {165.591 66.72}}
+PATCH M1.W.2.1 result_x_regx0x/CLK net=ZCTSNET_4 box={{178.025 80.288} {178.207 80.44}}
+PATCH M1.W.2.1 lte_105/ctmTdsLR_1_2321/A1 net=lte_105/tmp_net674 box={{98.833 50.953} {99.001 51.123}}
+DRC_PATCH: patched 38 / 38
+SIZE ctmTdsLR_1_648 OA221X1_RVT -> OA221X2_RVT
+PG_FIX VDD: 5 floating rails, adding stacked vias
+
+  REFRACT design flow — USE_PAD 0 (core only)   top=REFRACT
+┌──────────────────────────────────────────────┬─────────────┬──────────────────────────────────────────┬──────────┐
+│ Stage (steps)                                │ Status      │ Key numbers                              │ Time     │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ PAD_planning (pad_wrapper, pad_delay_model)  │ skip        │                                          │          │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ RTL_coding (vcs_simulation)                  │ PASS        │                                          │ 0:16     │
+│ Synthesis (design_compiler_synthesis)        │ PASS        │ area 19978.0, setup +3.735 ns            │ 0:25     │
+│ Formality (function_checking)                │ PASS        │                                          │ 0:15     │
+│ STA_prelayout (primetime_3corner)            │ PASS        │ setup +3.735 / hold +0.076 ns            │ 0:16     │
+│ Gate_sim (vcs_sdf_simulation)                │ PASS        │ SDF $removal warn 619/619                │ 0:48     │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ NDM (icc2_library_build)                     │ PASS        │                                          │ 0:06     │
+│ APR (floorplan_place_cts_route)              │ PASS        │                                          │ 4:09     │
+│ APR_ECO (maxcap_transition_fix)              │ PASS        │ buffers +40                              │ 0:34     │
+│ Finish (filler_gds_netlist)                  │ PASS        │                                          │ 0:21 x5  │
+│ DRC_patch (m1_patch) *                       │ PASS        │ M1 patched 38 / 38                       │ 0:14     │
+├──────────────────────────────────────────────┼─────────────┼──────────────────────────────────────────┼──────────┤
+│ DRC (icv_drc)                                │ PASS        │ CLEAN                                    │ 0:19 x5  │
+│ LVS (icv_lvs_transistor)                     │ PASS        │ PASS                                     │ 0:22 x4  │
+│ PEX (starrc_extraction)                      │ PASS        │ SPEF x3 corners                          │ 3:52 x4  │
+│ STA_postroute (primetime_spef)               │ PASS        │ setup +36.059 / hold +0.006 ns           │ 0:20 x4  │
+│ Signoff_ECO (sizing_buffering) *             │ PASS        │ cells changed 1                          │ 0:20 x3  │
+│ Formality_post (routed_vs_rtl)               │ PASS        │                                          │ 0:14     │
+│ Gate_post (vcs_postroute_sdf)                │ PASS        │ SDF $removal warn 619/619                │ 0:58     │
+└──────────────────────────────────────────────┴─────────────┴──────────────────────────────────────────┴──────────┘
+  ALL_STAGES_PASS  全部階段通過。
+  * = 修正回圈（上一步發現問題才會跑）   xN = 這一輪跑了 N 次

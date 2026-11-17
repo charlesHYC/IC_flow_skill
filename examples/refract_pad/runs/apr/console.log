@@ -1,0 +1,74 @@
+PAD_FLOORPLAN pads=57 slots/side=15 die=1200um core=520um (need 396.082566982um)
+PAD_PG_STITCH pg_vdd_b VDD side=bottom M4 x=548.093 from y=300.0 -> ring y=334.0
+PAD_PG_STITCH pg_vss_b VSS side=bottom M4 x=601.847 from y=300.0 -> ring y=328.0
+PAD_PG_STITCH pg_vdd_t VDD side=top M4 x=571.907 from y=900.0 -> ring y=865.992
+PAD_PG_STITCH pg_vss_t VSS side=top M4 x=598.153 from y=900.0 -> ring y=871.992
+PAD_PG_STITCH total 4
+PG_TERMINAL VDD M7 ring at (600.000, 334.000)
+PG_TERMINAL VSS M7 ring at (600.000, 328.000)
+PG_TERMINAL VDDIO M4 strap of pg_iovdd_r at (989.780, 553.190)
+PG_TERMINAL VSSIO M4 strap of pg_iovss_r at (989.780, 606.540)
+DRC checking and fixing for standard cell rail strategy rail_s.
+PG_FIX VDD: 8 floating rails, adding stacked vias
+PG_FIX VSS: 8 floating rails, adding stacked vias
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO Route finished with 0 open nets, of which 0 are frozen
+ECO Route finished with 1 violations
+DRC-SUMMARY:
+ROUTE_FIX iter 1 DRCs=1 open=0 nets={u_core/n605}
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO Route finished with 0 open nets, of which 0 are frozen
+ECO Route finished with 1 violations
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+DRC-SUMMARY:
+ROUTE_FIX iter 2 DRCs=1 open=0 nets={u_core/n605}
+DRC-SUMMARY:
+DRC-SUMMARY:
+ECO Route finished with 0 open nets, of which 0 are frozen
+ECO Route finished with 0 violations
+DRC-SUMMARY:
+DRC-SUMMARY:
+ROUTE_FIX iter 3 DRCs=0 open=0 nets={}
+APR_ROUTED (constraint violations: 2; run apr_eco.tcl next)

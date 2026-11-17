@@ -1,0 +1,3 @@
+SDF_NOTE slow: removal-check warnings=619 
+SDF_NOTE fast: removal-check warnings=619 
+GATE_SIM_PASS

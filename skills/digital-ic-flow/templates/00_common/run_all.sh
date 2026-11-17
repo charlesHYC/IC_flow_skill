@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # run_all.sh — 一個指令跑完整流程（含 eco / drc_patch / signoff_eco 三個修正回圈）
 #   bash scripts/run_all.sh            # 在專案目錄外也可以：bash <proj>/scripts/run_all.sh
-# USE_PAD=1 時第一步先跑 pad 階段（wrapper＋帶延遲的 PAD model），之後每個階段都以晶片 top 進行；DRC/LVS 若只剩 IO library 的問題會記為 PAD_LIMITED 並繼續，
-# 結尾印 ALL_STAGES_DONE_PAD_LIMITED（不是 PASS）。
-# 2026-11-11 以這支腳本在乾淨目錄跑 geofence（SAED32，USE_PAD=0）：ALL_STAGES_PASS，約 24 分鐘。
+# USE_PAD=1 時第一步先跑 pad 階段（wrapper＋帶延遲的 PAD model＋修正版 IO library），之後每個階段都以晶片 top 進行。
+# 驗證例：一個中小型設計（SAED32，USE_PAD=0）從乾淨目錄跑完 ALL_STAGES_PASS，約 24 分鐘。
 cd "${1:-$(dirname -- "${BASH_SOURCE[0]}")/..}"; set -o pipefail
 # 新的一輪：清掉上一輪的階段歷史（流程表格的「執行次數」只算這一輪）
 mkdir -p runs; : > runs/stage_history.log
@@ -22,16 +21,11 @@ for it in 1 2 3 4; do
   st lvs && st starrc || { echo STOP; exit 1; }
 done
 st fm_post && st gate_post || { echo STOP; exit 1; }
-if grep -qs '^[A-Z]*_PAD_LIMITED' runs/drc/console.log runs/lvs/console.log; then
-  echo "ALL_STAGES_DONE_PAD_LIMITED"
-  grep -h 'DRC_CLASSIFY\|_PAD_LIMITED' runs/drc/console.log runs/lvs/console.log
-else
-  echo "ALL_STAGES_PASS"
-fi
+echo "ALL_STAGES_PASS"
 grep -h "DC_SLACK" runs/synthesis/console.log | grep -v puts
 grep -h "STA_SLACK" runs/sta/console_*.log | grep -v puts
 grep -h "POSTROUTE_SLACK" runs/pt_post/console_*.log | grep -v puts
 grep -h "ECO inserted\|ECO buffer\|ECO upsize" runs/apr/eco_console.log | grep -v puts
 grep -h "^PATCH\|DRC_PATCH:" runs/apr/drc_patch_console.log 2>/dev/null | grep -v puts
-grep -h "^SIZE\|^BUFFER" runs/apr/signoff_eco_console.log 2>/dev/null
+grep -h "^SIZE\|^BUFFER\|^HOLD_BUFFER" runs/apr/signoff_eco_console.log 2>/dev/null
 grep -h "PG_FIX" runs/apr/console.log | grep -v puts

@@ -1,6 +1,5 @@
 ##############################################################################
 # fm_rtl2gate.tcl — 階段 3：Formality 等價驗證（RTL vs 合成 netlist）
-# 來源：geofence scripts/saed32/formality.tcl、Design_compiler_lab lab5 fm.tcl
 # reference (r:) = RTL；implementation (i:) = netlist；SVF 提供 DC 的轉換指引
 # USE_PAD=1：兩邊的 top 都是 ${DESIGN}_chip（含 PAD）
 ##############################################################################
