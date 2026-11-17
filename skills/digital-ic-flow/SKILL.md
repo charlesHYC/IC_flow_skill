@@ -48,7 +48,7 @@ description: Digital IC (cell-based) RTL-to-GDS design flow guide with ready-to-
 2. 只做核心（`USE_PAD 0`）
 3. 上 PAD（`USE_PAD 1`）
 
-SAED32 io_std 原檔的 GDS／CDL／LEF 錯誤和每一項的修法，見 `references/pitfalls.md`「PAD」一節。PAD 模式的 LVS 有一個代價要跟使用者說：VSS 和 VSSIO 在 schematic 裡併成同一個 net，所以這兩者之間的金屬短路抓不到。
+PAD 是什麼、製程給什麼、怎麼選、怎麼排、corner pad、怎麼確認用對，見 `references/flow_stages.md` 第 11 節（使用者問 PAD 的流程時照它回答）。SAED32 io_std 原檔的 GDS／CDL／LEF 錯誤和每一項的修法，見 `references/pitfalls.md`「PAD」一節。PAD 模式的 LVS 有一個代價要跟使用者說：VSS 和 VSSIO 在 schematic 裡併成同一個 net，所以這兩者之間的金屬短路抓不到。
 
 **中途改變主意**：改 `USE_PAD` 後要從 `pad` 階段整個重跑（`run_all.sh`），不能只重跑 APR，因為合成 netlist 的 top 不一樣。
 
