@@ -13,7 +13,7 @@
   → `LD_PRELOAD=/lib64/libk5crypto.so.3`（Formality／LC）或 `LD_PRELOAD=/usr/lib64/libkrb5support.so.0`（ICV、Verdi）。不要修改安裝目錄。
 - **`create_lib`／`open_lib` unknown command** → 用了 `dc_shell`；NDM 需要 `dcnxt_shell -topo`。
 - **`report_lib` 沒有輸出** → 這個指令要靠 Library Compiler。可以直接用 `lc_shell`（LC 2024 版也有 krb5 問題，可改用 2022.03）。
-- **一定要先 `source /.bash_EDA`**：這是本機的 EDA 環境（Synopsys 路徑與 license <license server>）。
+- **一定要先 `source /.bash_EDA`**：這是本機的 EDA 環境設定（Synopsys 工具路徑與 license 設定）；各學校／公司不同，換成自己的。
 - **Verdi／DC GUI 截圖要有 display** → 啟動 `Xvfb :N`、設 `DISPLAY=:N`；DC 用 `gui_write_window_image`。Verdi 在 `-nogui` 下不會畫波形，要跑真正的 GUI。
 
 ## 合成（DC）
