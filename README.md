@@ -15,7 +15,7 @@
 
 > 這是給任何 cell-based 數位 IC 設計用的教學公版：把腳本複製到自己的專案，照自己的設計一個階段一個階段修改。公版用 IC Contest 題目當例子在 SAED32 教學製程上從頭跑過，無 PAD 與有 PAD 兩種都是 `ALL_STAGES_PASS`（DRC CLEAN、LVS PASS），[完整結果](#五分鐘體驗不用裝-eda-工具)放在 `examples/`，數字見[驗證狀態](#驗證狀態)。
 >
-> 想要不自動化、每一步自己改自己跑的版本，見姊妹 repo [ic-flow-template](https://github.com/charlesHYC/-ic-flow-template)：同樣的流程，只給每個階段的公版腳本，判斷交給你自己。
+> 想要不自動化、每一步自己改自己跑的版本，見姊妹 repo [ic-flow-template](https://github.com/charlesHYC/ic-flow-template)：同樣的流程，只給每個階段的公版腳本，判斷交給你自己。
 
 ---
 
@@ -605,7 +605,7 @@ IC Contest 通常只評到第 5 步（RTL 模擬＋合成後閘級模擬），�
 [`flow_stages.md`](skills/digital-ic-flow/references/flow_stages.md)：每個階段的目的、做法、檢查清單；PAD 的完整說明在第 11 節。
 
 **Q：這個 repo 和 ic-flow-template 差在哪？**
-這個 repo 有一鍵跑完（`run_all.sh`）、自動判定、三個自動修正回圈和流程表格／面板，適合想先看到整個流程跑通的人。[ic-flow-template](https://github.com/charlesHYC/-ic-flow-template) 只給每個階段的公版腳本，檔頭寫清楚要改哪裡、跑完看哪份報告，每一步自己跑、自己判斷，適合想練習每一步怎麼做的人；它只做核心，不含 PAD 腳本。
+這個 repo 有一鍵跑完（`run_all.sh`）、自動判定、三個自動修正回圈和流程表格／面板，適合想先看到整個流程跑通的人。[ic-flow-template](https://github.com/charlesHYC/ic-flow-template) 只給每個階段的公版腳本，檔頭寫清楚要改哪裡、跑完看哪份報告，每一步自己跑、自己判斷，適合想練習每一步怎麼做的人；它只做核心，不含 PAD 腳本。
 
 ---
 
